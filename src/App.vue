@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <LineGraph />
+    <LineGraph :graphTitle="'test2'"/>
   </div>
 </template>
 
