@@ -142,6 +142,7 @@ export default {
     data: function () {
         return {
             chart: null,
+            chartHeader: null,
             graphTitleId: this.graphTitle.replaceAll(' ', '-'),
             svg: null,
             xScale: null,
@@ -167,14 +168,15 @@ export default {
         animatePathDraw: function (path, data) {
             const totalLength = path.node().getTotalLength();
             path
-                .attr("stroke-dasharray", totalLength + " " + totalLength)
-                .attr("stroke-dashoffset", totalLength)
-                .transition()
-                .duration(data.animateDrawDuration)
-                .ease(d3.easeLinear)
-                .attr("stroke-dashoffset", 0);
+              .attr("stroke-dasharray", totalLength + " " + totalLength)
+              .attr("stroke-dashoffset", totalLength)
+              .transition()
+              .duration(data.animateDrawDuration)
+              .ease(d3.easeLinear)
+              .attr("stroke-dashoffset", 0);
         },
         createChart: function () {
+            this.chartHeader = this.svg.append("g").attr("transform", `translate(${this.marginLeft},-120)`);
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
         },
         /**
