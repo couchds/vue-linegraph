@@ -11,8 +11,9 @@ import * as d3 from "d3";
 export default {
     name: 'LineGraph',
     props: {
-        // The data to visualize. This is an array of objects, where each
-        // object has the keys 'isBar', 'measurements', and 'name'.
+        /* The data to visualize. This is an array of objects, where each
+         * object has the keys 'isBar', 'measurements', and 'name'.
+        */
         data: {
             type: Array,
             default: () => {
@@ -22,34 +23,34 @@ export default {
                     isBar: false,
                     yAxis: 0,
                     color: 'steelblue',
-                    values: [
+                    measurements: [
                         {
-                            year: 2000,
-                            popularity: 50
+                            datetime: 2000,
+                            value: 50
                         },
                         {
-                            year: 2001,
-                            popularity: 150
+                            datetime: 2001,
+                            value: 150
                         },
                         {
-                            year: 2002,
-                            popularity: 200
+                            datetime: 2002,
+                            value: 200
                         },
                         {
-                            year: 2003,
-                            popularity: 130
+                            datetime: 2003,
+                            value: 130
                         },
                         {
-                            year: 2004,
-                            popularity: 240
+                            datetime: 2004,
+                            value: 240
                         },
                         {
-                            year: 2005,
-                            popularity: 380
+                            datetime: 2005,
+                            value: 380
                         },
                         {
-                            year: 2006,
-                            popularity: 420
+                            datetime: 2006,
+                            value: 420
                         }
                     ]
                 },
@@ -59,34 +60,34 @@ export default {
                     isBar: false,
                     yAxis: 1,
                     color: 'red',
-                    values: [
+                    measurements: [
                         {
-                            year: 2000,
-                            popularity: 30
+                            datetime: 2000,
+                            value: 30
                         },
                         {
-                            year: 2001,
-                            popularity: 120
+                            datetime: 2001,
+                            value: 120
                         },
                         {
-                            year: 2002,
-                            popularity: 170
+                            datetime: 2002,
+                            value: 170
                         },
                         {
-                            year: 2003,
-                            popularity: 160
+                            datetime: 2003,
+                            value: 160
                         },
                         {
-                            year: 2004,
-                            popularity: 150
+                            datetime: 2004,
+                            value: 150
                         },
                         {
-                            year: 2005,
-                            popularity: 140
+                            datetime: 2005,
+                            value: 140
                         },
                         {
-                            year: 2006,
-                            popularity: 100
+                            datetime: 2006,
+                            value: 100
                         }
                     ]
                 }
@@ -151,26 +152,43 @@ export default {
         this.createXScale();
         let Y0 = this.getDataByScale(0);
         let Y1 = this.getDataByScale(1);
-        this.createXAxis(Y0.values);
-        this.createYScale(Y0.values);
-        this.createYAxis(Y0.values, 0);
-        this.createYAxis(Y1.values, 1);
+        this.createXAxis(Y0.measurements);
+        this.createYScale(Y0.measurements);
+        this.createYAxis(Y0.measurements, 0);
+        this.createYAxis(Y1.measurements, 1);
         this.createLine(Y0);
         this.createLine(Y1);
     },
     methods: {
+        animatePathDraw: function (path) {
+            const totalLength = path.node().getTotalLength();
+            path
+                .attr("stroke-dasharray", totalLength + " " + totalLength)
+                .attr("stroke-dashoffset", totalLength)
+                .transition()
+                .duration(1500)
+                .ease(d3.easeLinear)
+                .attr("stroke-dashoffset", 0);
+        },
         createChart: function () {
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
         },
+        /**
+         * Create the y0 or y1 axis in D3, depending on which number we pass as parameter.
+         */
         createYAxis: function (data, dataNumber) {
+            // Use the D3 axis function that corresponds to y0 (left) or y1 (right) axis.
             let axisFn = {
                 0: d3.axisLeft,
                 1: d3.axisRight
             }[dataNumber];
+            // Horizontally translate by 0 if we are using the y0 axis and translate by
+            // the adjusted width if we are using the y1 axis.
             let xCoord = {
                 0: 0,
                 1: this.adjustedWidth
             }[dataNumber];
+            // Pass our y scaling function to the D3 axis function to draw the y axis.
             this.chart
                 .append("g")
                 .attr("transform", `translate(${xCoord}, 0)`)
@@ -183,7 +201,7 @@ export default {
             let self = this;
             this.yScale = d3.scaleLinear()
               .range([self.adjustedHeight, 0])
-              .domain([0, d3.max(data, d => d.popularity)]);
+              .domain([0, d3.max(data, d => d.value)]);
         },
         createXAxis: function (data) {
             this.chart
@@ -193,13 +211,12 @@ export default {
         },
         createXScale: function () {
             let self = this;
-            let Y0Data = this.getDataByScale(0).values;
+            let Y0Data = this.getDataByScale(0).measurements;
             this.xScale = d3.scaleLinear()
               .range([0, self.adjustedWidth])
-              .domain(d3.extent(Y0Data, d => d.year));
+              .domain(d3.extent(Y0Data, d => d.datetime));
         },
         createSVG: function () {
-            console.log(this.graphTitleId);
             this.svg = d3.select('#'+this.graphTitleId).append('svg')
               .attr("viewBox", `0 0 ` + this.width + ` ` + this.height); // we setup with viewBox to add responsiveness.
             console.log(this.svg);
@@ -208,10 +225,10 @@ export default {
             let self = this;
             const line = d3
               .line()
-              .x(dataPoint => self.xScale(dataPoint.year))
-              .y(dataPoint => self.yScale(dataPoint.popularity));
+              .x(dataPoint => self.xScale(dataPoint.datetime))
+              .y(dataPoint => self.yScale(dataPoint.value));
             const path = this.chart.append("path")
-              .datum(data.values)
+              .datum(data.measurements)
               .style("fill", "none")
               .attr("stroke", data.color)
               .attr("stroke-linejoin", "round")
@@ -219,16 +236,6 @@ export default {
               .attr("stroke-width", this.strokeWidth)
               .attr("d", line);
             if (data.animateDraw) this.animatePathDraw(path);
-        },
-        animatePathDraw: function (path) {
-            const totalLength = path.node().getTotalLength();
-            path
-                .attr("stroke-dasharray", totalLength + " " + totalLength)
-                .attr("stroke-dashoffset", totalLength)
-                .transition()
-                .duration(1500)
-                .ease(d3.easeLinear)
-                .attr("stroke-dashoffset", 0);
         },
         getDataByScale: function (axisNumber) {
             return this.data.filter((d) => {
