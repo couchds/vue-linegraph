@@ -14,15 +14,16 @@ export default {
         /* The data to visualize. This is an array of objects, where each
          * object has the keys 'isBar', 'measurements', and 'name'.
         */
-        data: {
+        timeSeriesData: {
             type: Array,
             default: () => {
                 return [{
                     animateDraw: true,
-                    name: 'Test Data',
-                    isBar: false,
-                    yAxis: 0,
+                    animateDrawDuration: 1000,
                     color: 'steelblue',
+                    isBar: false,
+                    name: 'Test Data',
+                    yAxis: 0,
                     measurements: [
                         {
                             datetime: 2000,
@@ -56,10 +57,11 @@ export default {
                 },
                 {
                     animateDraw: false,
-                    name: 'Test Data 2',
-                    isBar: false,
-                    yAxis: 1,
+                    animateDrawDuration: null,
                     color: 'red',
+                    isBar: false,
+                    name: 'Test Data 2',
+                    yAxis: 1,
                     measurements: [
                         {
                             datetime: 2000,
@@ -110,7 +112,7 @@ export default {
         // Margins
         marginBottom: {
             type: Number,
-            default: 50
+            default: 20
         },
         marginTop: {
             type: Number,
@@ -143,7 +145,8 @@ export default {
             graphTitleId: this.graphTitle.replaceAll(' ', '-'),
             svg: null,
             xScale: null,
-            yScale: null
+            y0Scale: null,
+            y1Scale: null
         }
     },
     mounted: function () {
@@ -153,20 +156,21 @@ export default {
         let Y0 = this.getDataByScale(0);
         let Y1 = this.getDataByScale(1);
         this.createXAxis(Y0.measurements);
-        this.createYScale(Y0.measurements);
+        this.createY0Scale(Y0.measurements);
+        this.createY1Scale(Y1.measurements);
         this.createYAxis(Y0.measurements, 0);
         this.createYAxis(Y1.measurements, 1);
         this.createLine(Y0);
         this.createLine(Y1);
     },
     methods: {
-        animatePathDraw: function (path) {
+        animatePathDraw: function (path, data) {
             const totalLength = path.node().getTotalLength();
             path
                 .attr("stroke-dasharray", totalLength + " " + totalLength)
                 .attr("stroke-dashoffset", totalLength)
                 .transition()
-                .duration(1500)
+                .duration(data.animateDrawDuration)
                 .ease(d3.easeLinear)
                 .attr("stroke-dashoffset", 0);
         },
@@ -188,18 +192,25 @@ export default {
                 0: 0,
                 1: this.adjustedWidth
             }[dataNumber];
+            let yScale = this.getYScale(dataNumber);
             // Pass our y scaling function to the D3 axis function to draw the y axis.
             this.chart
                 .append("g")
                 .attr("transform", `translate(${xCoord}, 0)`)
-                .call(axisFn(this.yScale));
+                .call(axisFn(yScale));
         },
         /**
          * Create scale for first Y axis, on the left-hand side of the graph.
          */
-        createYScale: function (data) {
+        createY0Scale: function (data) {
             let self = this;
-            this.yScale = d3.scaleLinear()
+            this.y0Scale = d3.scaleLinear()
+              .range([self.adjustedHeight, 0])
+              .domain([0, d3.max(data, d => d.value)]);
+        },
+        createY1Scale: function (data) {
+            let self = this;
+            this.y1Scale = d3.scaleLinear()
               .range([self.adjustedHeight, 0])
               .domain([0, d3.max(data, d => d.value)]);
         },
@@ -223,10 +234,12 @@ export default {
         },
         createLine: function (data) {
             let self = this;
+            let yScale = this.getYScale(data.yAxis);
+            // Line constructor 
             const line = d3
               .line()
               .x(dataPoint => self.xScale(dataPoint.datetime))
-              .y(dataPoint => self.yScale(dataPoint.value));
+              .y(dataPoint => yScale(dataPoint.value));
             const path = this.chart.append("path")
               .datum(data.measurements)
               .style("fill", "none")
@@ -235,12 +248,21 @@ export default {
               .attr("stroke-linecap", "round")
               .attr("stroke-width", this.strokeWidth)
               .attr("d", line);
-            if (data.animateDraw) this.animatePathDraw(path);
+            if (data.animateDraw) this.animatePathDraw(path, data);
         },
         getDataByScale: function (axisNumber) {
-            return this.data.filter((d) => {
+            return this.timeSeriesData.filter((d) => {
                 return d.yAxis === axisNumber;
             })[0];
+        },
+        /**
+         * Get the Y scaling function for the given time series.
+         */
+        getYScale: function (seriesNumber) {
+            return {
+                0: this.y0Scale,
+                1: this.y1Scale
+            }[seriesNumber];
         }
     }
 }
