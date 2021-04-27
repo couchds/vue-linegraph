@@ -247,10 +247,4 @@ export default {
 </script>
 
 <style scoped>
-.line-graph-container {
-    border-style: solid;
-    border-color: green;
-    margin-top: 40px;
-    width: 30%;
-}
 </style>
