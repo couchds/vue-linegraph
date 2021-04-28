@@ -72,6 +72,10 @@ export default {
       randomizeData: function () {
           console.log('to be implemented!');
       },
+      /**
+       * Set the app data's number of visuals to match the
+       * user input.
+       */
       updateNumVisuals: function () {
           this.numVisuals = this.numVisualsInput;
       }
