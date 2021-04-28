@@ -13,7 +13,8 @@
     <div class="flex-row">
       <div class="flex-row-item" v-for="visual in projectData" :key="visual.id">
         <LineGraph :graphTitle="visual.graphTitle"
-          :timeSeriesData="visual.timeSeriesData" />
+          :timeSeriesData="visual.timeSeriesData"
+          :datetimeFormat="visual.datetimeFormat" />
       </div>
     </div>
   </div>
@@ -61,7 +62,8 @@ export default {
               for (var i = 0; i < newValue-oldValue; i++) {
                   this.projectData.push({
                       'graphTitle': 'Test'+String(lastIndex+i+1),
-                      'id': i
+                      'id': i,
+                      'datetimeFormat': '%Y'
                   })
               }
           }
@@ -99,7 +101,8 @@ export default {
           return {
               graphTitle: 'Graph ' + index,
               id: Math.ceil(Math.random()*5000),
-              timeSeriesData: data
+              timeSeriesData: data,
+              datetimeFormat: '%Y'
           }
       },
       /**

@@ -275,7 +275,7 @@ export default {
             } else {
                 searchArg = [Y0.measurements];
             }
-            const parse = d3.timeParse(this.datetimeFormat);
+            var parse = d3.timeParse(this.datetimeFormat);
             // Get min of min of each time series, and same for max.
             min = d3.min(searchArg, function (d) { return d3.min(d, function (d) { return parse(d.datetime) }); });
             max = d3.max(searchArg,  function (d) { return d3.max(d, function (d) { return parse(d.datetime) }); });
@@ -292,7 +292,8 @@ export default {
         createLine: function (data) {
             let self = this;
             let yScale = this.getYScale(data.yAxis);
-            const parse = d3.timeParse(this.datetimeFormat);
+            console.log(this.datetimeFormat);
+            var parse = d3.timeParse(this.datetimeFormat);
             // Line constructor 
             const line = d3
               .line()
