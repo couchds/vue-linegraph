@@ -10,19 +10,6 @@
       <button class="demo-btn" @click="randomizeData">Randomize Data</button><br />
       <label># of visuals:</label><input type="text" v-model="numVisualsInput" @change="updateNumVisuals" />
     </div>
-
-    <div class="flex-row">
-      <div class="flex-row-item" >
-        <LineGraph :graphTitle="'Example 1'" />
-      </div>
-      <div class="flex-row-item" >
-        <LineGraph :graphTitle="'Example 2'" />
-      </div>
-      <div class="flex-row-item" >
-        <LineGraph :graphTitle="'Example 3'" />
-      </div>
-    </div>
-
     <div class="flex-row">
       <div class="flex-row-item" v-for="visual in projectData" :key="visual.id">
         <LineGraph :graphTitle="visual.graphTitle"
