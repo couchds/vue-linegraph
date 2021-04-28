@@ -79,7 +79,7 @@ export default {
           let datetimeStart = 2000; // Need to develop this.
           for (var i = 0; i < numDataPts; i++) {
               timeSeries.push({
-                  value: Math.ceil(Math.random()*500),
+                  value: Math.ceil(Math.random()*100000),
                   datetime: datetimeStart + i
               })
           }
@@ -98,7 +98,7 @@ export default {
           ]
           return {
               graphTitle: 'Graph ' + index,
-              id: Math.ceil(Math.random()*1000),
+              id: Math.ceil(Math.random()*5000),
               timeSeriesData: data
           }
       },

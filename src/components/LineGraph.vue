@@ -252,11 +252,12 @@ export default {
               .range([self.adjustedHeight, 0])
               .domain([0, d3.max(data, d => d.value)]);
         },
-        createXAxis: function (data) {
+        createXAxis: function () {
             this.chart
               .append("g")
               .attr("transform", `translate(0,${this.adjustedHeight})`)
-              .call(d3.axisBottom(this.xScale).ticks(data.length));
+              .call(d3.axisBottom(this.xScale).ticks(10));
+              //.call(d3.axisBottom(this.xScale).ticks(data.length));
         },
         /** 
          * Create X scale that maps datetime to coordinate.
