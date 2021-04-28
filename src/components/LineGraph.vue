@@ -155,22 +155,31 @@ export default {
         }
     },
     mounted: function () {
-        console.log('on mount')
         this.createSVG();
         this.createChart();
         this.createXScale();
         let Y0 = this.getDataByScale(0);
-        console.log(Y0);
+        if (Y0) {
+            this.createY0Scale(Y0.measurements);
+            this.createYAxis(0);
+            this.createLine(Y0);
+        }
+        this.createXAxis(Y0.measurements); // TODO: use Y0 and Y1 measurements!
+
         let Y1 = this.getDataByScale(1);
-        this.createXAxis(Y0.measurements);
-        this.createY0Scale(Y0.measurements);
-        if (Y1) this.createY1Scale(Y1.measurements);
-        this.createYAxis(Y0.measurements, 0);
-        if (Y1)  this.createYAxis(Y1.measurements, 1);
-        this.createLine(Y0);
-        if (Y1) this.createLine(Y1);
+        if (Y1) {
+            this.createY1Scale(Y1.measurements);
+            this.createYAxis(1);
+            this.createLine(Y1);
+        }
     },
     methods: {
+        /**
+         * Animate a path being drawn using a transition.
+         * 
+         * @param {Selection} path The path that is drawn.
+         * @param {Object} data The time series that we use the options from.
+         */
         animatePathDraw: function (path, data) {
             const totalLength = path.node().getTotalLength();
             path
@@ -181,26 +190,30 @@ export default {
               .ease(d3.easeLinear)
               .attr("stroke-dashoffset", 0);
         },
+        /**
+         * Create the g element for the chart that we will contain the visualization.
+         */
         createChart: function () {
-            this.chartHeader = this.svg.append("g").attr("transform", `translate(${this.marginLeft},-120)`);
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
         },
         /**
          * Create the y0 or y1 axis in D3, depending on which number we pass as parameter.
+         * 
+         * @param {0|1} axis Represents either the y0 or y1 axis.
          */
-        createYAxis: function (data, dataNumber) {
+        createYAxis: function (axis) {
             // Use the D3 axis function that corresponds to y0 (left) or y1 (right) axis.
             let axisFn = {
                 0: d3.axisLeft,
                 1: d3.axisRight
-            }[dataNumber];
+            }[axis];
             // Horizontally translate by 0 if we are using the y0 axis and translate by
             // the adjusted width if we are using the y1 axis.
             let xCoord = {
                 0: 0,
                 1: this.adjustedWidth
-            }[dataNumber];
-            let yScale = this.getYScale(dataNumber);
+            }[axis];
+            let yScale = this.getYScale(axis);
             // Pass our y scaling function to the D3 axis function to draw the y axis.
             this.chart
                 .append("g")
@@ -228,12 +241,28 @@ export default {
               .attr("transform", `translate(0,${this.adjustedHeight})`)
               .call(d3.axisBottom(this.xScale).ticks(data.length));
         },
+        /** 
+         * Create X scale that maps datetime to coordinate.
+         * For the min / max of the domain we look at both time series within a graph
+         * if applicable.
+         */
         createXScale: function () {
+            var min, max, searchArg;
             let self = this;
-            let Y0Data = this.getDataByScale(0).measurements;
-            this.xScale = d3.scaleLinear()
+            let Y0 = this.getDataByScale(0);
+            let Y1 = this.getDataByScale(1);
+            // If we have a second time series we consider it along with the first.
+            if (Y1) {
+                searchArg = [Y0.measurements, Y1.measurements];
+            } else {
+                searchArg = [Y0.measurements];
+            }
+            // Get min of min of each time series, and same for max.
+            min = d3.min(searchArg, function (d) { return d3.min(d, function (d) { return d.datetime }); });
+            max = d3.max(searchArg,  function (d) { return d3.max(d, function (d) { return d.datetime }); });
+            this.xScale = d3.scaleTime()
               .range([0, self.adjustedWidth])
-              .domain(d3.extent(Y0Data, d => d.datetime));
+              .domain([min, max]);
         },
         createSVG: function () {
         d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
