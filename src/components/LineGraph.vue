@@ -137,11 +137,11 @@ export default {
         },
         marginTop: {
             type: Number,
-            default: 0
+            default: 10
         },
         marginLeft: {
             type: Number,
-            default: 30
+            default: 60
         },
         marginRight: {
             type: Number,
@@ -234,6 +234,8 @@ export default {
             // Pass our y scaling function to the D3 axis function to draw the y axis.
             this.chart
                 .append("g")
+                .attr("class", "y-axis")
+                .attr("font-size", "20px")
                 .attr("transform", `translate(${xCoord}, 0)`)
                 .call(axisFn(yScale));
         },
@@ -255,6 +257,7 @@ export default {
         createXAxis: function () {
             this.chart
               .append("g")
+              .attr("class", "x-axis")
               .attr("transform", `translate(0,${this.adjustedHeight})`)
               .call(d3.axisBottom(this.xScale).ticks(10));
               //.call(d3.axisBottom(this.xScale).ticks(data.length));
