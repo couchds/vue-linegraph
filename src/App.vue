@@ -11,8 +11,9 @@
       <label># of visuals:</label><input type="text" v-model="numVisualsInput" @change="updateNumVisuals" />
     </div>
     <div class="flex-row">
-      <div class="flex-row-item" v-for="visual in projectData" :key="visual.graphTitle">
-        <LineGraph :graphTitle="visual.graphTitle"/>
+      <div class="flex-row-item" v-for="visual in projectData" :key="visual.id">
+        <LineGraph :graphTitle="visual.graphTitle"
+          :timeSeriesData="visual.timeSeriesData" />
       </div>
     </div>
   </div>
@@ -59,7 +60,8 @@ export default {
               let lastIndex = this.projectData.length;
               for (var i = 0; i < newValue-oldValue; i++) {
                   this.projectData.push({
-                      'graphTitle': 'Test'+String(lastIndex+i+1)
+                      'graphTitle': 'Test'+String(lastIndex+i+1),
+                      'id': i
                   })
               }
           }
@@ -67,10 +69,53 @@ export default {
   },
   methods: {
       /**
+       * Creates an object for time series data suitable for the component.
+       * Currently assumes one measurement per year. 
+       * 
+       * @param {Number} numDataPts The number of data points to use in the time series.
+       */
+      generateRandomTimeSeries: function (numDataPts) {
+          var timeSeries = [];
+          let datetimeStart = 2000; // Need to develop this.
+          for (var i = 0; i < numDataPts; i++) {
+              timeSeries.push({
+                  value: Math.ceil(Math.random()*500),
+                  datetime: datetimeStart + i
+              })
+          }
+          return timeSeries;
+      },
+      generateRandomVisual: function (numDataPts, index) {
+          var data =  [
+              {
+                  animateDraw: true,
+                  animateDrawDuration: 1000,
+                  color: 'steelblue',
+                  name: 'Graph ' + index,
+                  yAxis: 0,
+                  measurements: this.generateRandomTimeSeries(numDataPts)
+              }
+          ]
+          return {
+              graphTitle: 'Graph ' + index,
+              id: Math.ceil(Math.random()*1000),
+              timeSeriesData: data
+          }
+      },
+      /**
        * Randomize the data in the dashboard.
+       * See:
+       * https://vuejs.org/2016/02/06/common-gotchas/#Why-isn%E2%80%99t-the-DOM-updating
        */
       randomizeData: function () {
-          console.log('to be implemented!');
+          var newProjectData = []
+          for (var i = 0; i < this.numVisuals; i++) {
+              newProjectData.push(this.generateRandomVisual(20, i));
+          }
+          this.$set(this, 'projectData', newProjectData); 
+          console.log(this.projectData);
+          //this.projectData = newProjectData;
+          //console.log(this.projectData);
       },
       /**
        * Set the app data's number of visuals to match the

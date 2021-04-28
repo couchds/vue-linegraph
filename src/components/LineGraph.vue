@@ -101,6 +101,10 @@ export default {
             type: String,
             default : 'My Line Graph'
         },
+        id: {
+            type: Number,
+            default: 1
+        },
         height: {
             type: Number,
             default: 300
@@ -151,18 +155,20 @@ export default {
         }
     },
     mounted: function () {
+        console.log('on mount')
         this.createSVG();
         this.createChart();
         this.createXScale();
         let Y0 = this.getDataByScale(0);
+        console.log(Y0);
         let Y1 = this.getDataByScale(1);
         this.createXAxis(Y0.measurements);
         this.createY0Scale(Y0.measurements);
-        this.createY1Scale(Y1.measurements);
+        if (Y1) this.createY1Scale(Y1.measurements);
         this.createYAxis(Y0.measurements, 0);
-        this.createYAxis(Y1.measurements, 1);
+        if (Y1)  this.createYAxis(Y1.measurements, 1);
         this.createLine(Y0);
-        this.createLine(Y1);
+        if (Y1) this.createLine(Y1);
     },
     methods: {
         animatePathDraw: function (path, data) {
@@ -230,6 +236,7 @@ export default {
               .domain(d3.extent(Y0Data, d => d.datetime));
         },
         createSVG: function () {
+        d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
             this.svg = d3.select('#'+this.graphTitleId).append('svg')
               .attr("viewBox", `0 0 ` + this.width + ` ` + this.height); // we setup with viewBox to add responsiveness.
             console.log(this.svg);
