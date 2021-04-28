@@ -96,11 +96,28 @@ export default {
                 ]
             }
         },
-        // Graph title, which should be unique among a set of graphs.
+        /**
+         * The format that both series have their datetimes in.
+         * In the future, we might want to move this to the series itself
+         * (what if each series has its own DT format?)
+         */
+        datetimeFormat: {
+            type: String,
+            default: '%Y'
+        },
+        /**
+         * Graph title, which should be unique among a set of graphs.
+         * If it is not unique, then the SVG selector is bugged because it selects
+         * by ID.
+         */
         graphTitle: {
             type: String,
             default : 'My Line Graph'
         },
+        /**
+         * An ID unique to this graph among a set of graphs.
+         * This is the key that Vue uses when dynamically rendering with v-for.
+         */
         id: {
             type: Number,
             default: 1
@@ -265,7 +282,7 @@ export default {
               .domain([min, max]);
         },
         createSVG: function () {
-        d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
+            d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
             this.svg = d3.select('#'+this.graphTitleId).append('svg')
               .attr("viewBox", `0 0 ` + this.width + ` ` + this.height); // we setup with viewBox to add responsiveness.
             console.log(this.svg);
