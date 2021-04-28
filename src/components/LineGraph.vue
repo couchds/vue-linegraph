@@ -26,31 +26,31 @@ export default {
                     yAxis: 0,
                     measurements: [
                         {
-                            datetime: 2000,
+                            datetime: '2015-01-02',
                             value: 50
                         },
                         {
-                            datetime: 2001,
+                            datetime: '2015-02-02',
                             value: 150
                         },
                         {
-                            datetime: 2002,
+                            datetime: '2015-03-02',
                             value: 200
                         },
                         {
-                            datetime: 2003,
+                            datetime: '2015-04-02',
                             value: 130
                         },
                         {
-                            datetime: 2004,
+                            datetime: '2015-05-02',
                             value: 240
                         },
                         {
-                            datetime: 2005,
+                            datetime: '2015-06-02',
                             value: 380
                         },
                         {
-                            datetime: 2006,
+                            datetime: '2015-07-02',
                             value: 420
                         }
                     ]
@@ -64,31 +64,31 @@ export default {
                     yAxis: 1,
                     measurements: [
                         {
-                            datetime: 2000,
+                            datetime: '2015-01-02',
                             value: 30
                         },
                         {
-                            datetime: 2001,
+                            datetime: '2015-02-02',
                             value: 120
                         },
                         {
-                            datetime: 2002,
+                            datetime: '2015-03-02',
                             value: 170
                         },
                         {
-                            datetime: 2003,
+                            datetime: '2015-04-02',
                             value: 160
                         },
                         {
-                            datetime: 2004,
+                            datetime: '2015-05-02',
                             value: 150
                         },
                         {
-                            datetime: 2005,
+                            datetime: '2015-06-02',
                             value: 140
                         },
                         {
-                            datetime: 2006,
+                            datetime: '2015-07-02',
                             value: 100
                         }
                     ]
@@ -103,7 +103,7 @@ export default {
          */
         datetimeFormat: {
             type: String,
-            default: '%Y'
+            default: '%Y-%m-%d'
         },
         /**
          * Graph title, which should be unique among a set of graphs.
