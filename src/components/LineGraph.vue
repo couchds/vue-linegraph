@@ -274,9 +274,10 @@ export default {
             } else {
                 searchArg = [Y0.measurements];
             }
+            var parse = d3.timeParse("%Y");
             // Get min of min of each time series, and same for max.
-            min = d3.min(searchArg, function (d) { return d3.min(d, function (d) { return d.datetime }); });
-            max = d3.max(searchArg,  function (d) { return d3.max(d, function (d) { return d.datetime }); });
+            min = d3.min(searchArg, function (d) { return d3.min(d, function (d) { return parse(d.datetime) }); });
+            max = d3.max(searchArg,  function (d) { return d3.max(d, function (d) { return parse(d.datetime) }); });
             this.xScale = d3.scaleTime()
               .range([0, self.adjustedWidth])
               .domain([min, max]);
@@ -290,10 +291,12 @@ export default {
         createLine: function (data) {
             let self = this;
             let yScale = this.getYScale(data.yAxis);
+            var parse = d3.timeParse("%Y");
             // Line constructor 
             const line = d3
               .line()
-              .x(dataPoint => self.xScale(dataPoint.datetime))
+              //.x(dataPoint => self.xScale(dataPoint.datetime))
+              .x(dataPoint => self.xScale(parse(dataPoint.datetime)))
               .y(dataPoint => yScale(dataPoint.value));
             const path = this.chart.append("path")
               .datum(data.measurements)
