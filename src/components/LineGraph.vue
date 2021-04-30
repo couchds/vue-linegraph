@@ -61,7 +61,7 @@ export default {
                     color: 'red',
                     isBar: false,
                     name: 'Test Data 2',
-                    yAxis: 0,
+                    yAxis: 1,
                     measurements: [
                         {
                             datetime: '2015-01-02',
@@ -172,22 +172,28 @@ export default {
         }
     },
     mounted: function () {
+        var i;
+        this.graphTitleId = this.graphTitle.replaceAll(' ', '-');
         this.createSVG();
         this.createChart();
         this.createXScale();
         let Y0 = this.getDataByScale(0);
         if (Y0) {
-            this.createY0Scale(Y0.measurements);
+            this.createY0Scale(Y0);
             this.createYAxis(0);
-            this.createLine(Y0);
+            for (i = 0; i < Y0.length; i++) {
+                this.createLine(Y0[i]);
+            }
         }
-        this.createXAxis(Y0.measurements); // TODO: use Y0 and Y1 measurements!
-
+        this.createXAxis(); // TODO: use Y0 and Y1 measurements!
         let Y1 = this.getDataByScale(1);
         if (Y1) {
-            this.createY1Scale(Y1.measurements);
+            this.createY1Scale(Y1);
             this.createYAxis(1);
             this.createLine(Y1);
+            for (i = 0; i < Y1.length; i++) {
+                this.createLine(Y1);
+            }
         }
     },
     methods: {
@@ -243,16 +249,22 @@ export default {
          * Create scale for first Y axis, on the left-hand side of the graph.
          */
         createY0Scale: function (data) {
-            let self = this;
+            //let self = this;
+            // Find the maximum value among all time series.
+            const allMeasurements = data.map(d => d.measurements);
+            const max = d3.max(allMeasurements,  function (d) { return d3.max(d, function (d) { return d.value }); });
             this.y0Scale = d3.scaleLinear()
-              .range([self.adjustedHeight, 0])
-              .domain([0, d3.max(data, d => d.value)]);
+              .range([this.adjustedHeight, 0])
+              .domain([0, max]);
+              //.domain([0, d3.max(data, d => d.value)]);
         },
         createY1Scale: function (data) {
-            let self = this;
+            //let self = this;
+            const allMeasurements = data.map(d => d.measurements);
+            const max = d3.max(allMeasurements,  function (d) { return d3.max(d, function (d) { return d.value }); });
             this.y1Scale = d3.scaleLinear()
-              .range([self.adjustedHeight, 0])
-              .domain([0, d3.max(data, d => d.value)]);
+              .range([this.adjustedHeight, 0])
+              .domain([0, max]);
         },
         createXAxis: function () {
             this.chart
@@ -274,9 +286,9 @@ export default {
             let Y1 = this.getDataByScale(1);
             // If we have a second time series we consider it along with the first.
             if (Y1) {
-                searchArg = [Y0.measurements, Y1.measurements];
+                searchArg = (Y0.map(d => d.measurements)).concat(Y1.map(d => d.measurements));
             } else {
-                searchArg = [Y0.measurements];
+                searchArg = Y0.map(d => d.measurements);
             }
             var parse = d3.timeParse(this.datetimeFormat);
             // Get min of min of each time series, and same for max.

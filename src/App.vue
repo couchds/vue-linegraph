@@ -15,6 +15,7 @@
         <LineGraph :graphTitle="visual.graphTitle"
           :timeSeriesData="visual.timeSeriesData"
           :datetimeFormat="visual.datetimeFormat" />
+
       </div>
     </div>
   </div>
@@ -87,6 +88,9 @@ export default {
           }
           return timeSeries;
       },
+      /**
+       * 
+       */
       generateRandomVisual: function (numDataPts, index) {
           var data =  [
               {
