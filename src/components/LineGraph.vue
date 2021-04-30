@@ -133,7 +133,7 @@ export default {
         // Margins
         marginBottom: {
             type: Number,
-            default: 20
+            default: 30
         },
         marginTop: {
             type: Number,
@@ -145,7 +145,7 @@ export default {
         },
         marginRight: {
             type: Number,
-            default: 40
+            default: 60
         },
         strokeWidth: {
             type: Number,
@@ -172,23 +172,14 @@ export default {
         }
     },
     mounted: function () {
+        this.graphTitleId = this.graphTitle.replaceAll(' ', '-');
         this.createSVG();
         this.createChart();
         this.createXScale();
-        let Y0 = this.getDataByScale(0);
-        if (Y0) {
-            this.createY0Scale(Y0.measurements);
-            this.createYAxis(0);
-            this.createLine(Y0);
-        }
-        this.createXAxis(Y0.measurements); // TODO: use Y0 and Y1 measurements!
+        this.createXAxis();
 
-        let Y1 = this.getDataByScale(1);
-        if (Y1) {
-            this.createY1Scale(Y1.measurements);
-            this.createYAxis(1);
-            this.createLine(Y1);
-        }
+        this.createTimeSeries(0);
+        this.createTimeSeries(1);
     },
     methods: {
         /**
@@ -212,6 +203,18 @@ export default {
          */
         createChart: function () {
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
+        },
+        /**
+         * Create y0 or y1 axis and draw its time series.
+         * 
+         * @param {0|1} axis Represents either the y0 or y1 axis.
+         */
+        createTimeSeries: function (axis) {
+            const Y = this.getDataByScale(axis);
+            if (!Y) return;
+            this.createYScale(Y, axis);
+            this.createYAxis(axis);
+            for (var i = 0; i < Y.length; i++) this.createLine(Y[i]);
         },
         /**
          * Create the y0 or y1 axis in D3, depending on which number we pass as parameter.
@@ -241,18 +244,22 @@ export default {
         },
         /**
          * Create scale for first Y axis, on the left-hand side of the graph.
+         * 
+         * @param {Array[Object]} data All of the time series.
+         * @param {0|1} axis Represents either the y0 or y1 axis.
          */
-        createY0Scale: function (data) {
-            let self = this;
-            this.y0Scale = d3.scaleLinear()
-              .range([self.adjustedHeight, 0])
-              .domain([0, d3.max(data, d => d.value)]);
-        },
-        createY1Scale: function (data) {
-            let self = this;
-            this.y1Scale = d3.scaleLinear()
-              .range([self.adjustedHeight, 0])
-              .domain([0, d3.max(data, d => d.value)]);
+        createYScale: function (data, axis) {
+            // Find the maximum value among all time series.
+            const allMeasurements = data.map(d => d.measurements);
+            const max = d3.max(allMeasurements,  function (d) { return d3.max(d, function (d) { return d.value }); });
+            const scale = d3.scaleLinear()
+              .range([this.adjustedHeight, 0])
+              .domain([0, max]);
+            if (axis === 0) {
+                this.y0Scale = scale;
+            } else {
+                this.y1Scale = scale;
+            }
         },
         createXAxis: function () {
             this.chart
@@ -274,9 +281,9 @@ export default {
             let Y1 = this.getDataByScale(1);
             // If we have a second time series we consider it along with the first.
             if (Y1) {
-                searchArg = [Y0.measurements, Y1.measurements];
+                searchArg = (Y0.map(d => d.measurements)).concat(Y1.map(d => d.measurements));
             } else {
-                searchArg = [Y0.measurements];
+                searchArg = Y0.map(d => d.measurements);
             }
             var parse = d3.timeParse(this.datetimeFormat);
             // Get min of min of each time series, and same for max.
@@ -306,6 +313,7 @@ export default {
             const path = this.chart.append("path")
               .datum(data.measurements)
               .style("fill", "none")
+              .attr("class", "line-graph")
               .attr("stroke", data.color)
               .attr("stroke-linejoin", "round")
               .attr("stroke-linecap", "round")
@@ -313,10 +321,15 @@ export default {
               .attr("d", line);
             if (data.animateDraw) this.animatePathDraw(path, data);
         },
-        getDataByScale: function (axisNumber) {
+        /**
+         * Get all time series data that are using the given scale (either y0 or y1).
+         * 
+         * @param {0|1} axis Represents either y0 or y1 axis.
+         */
+        getDataByScale: function (axis) {
             return this.timeSeriesData.filter((d) => {
-                return d.yAxis === axisNumber;
-            })[0];
+                return d.yAxis === axis;
+            });
         },
         /**
          * Get the Y scaling function for the given time series.
