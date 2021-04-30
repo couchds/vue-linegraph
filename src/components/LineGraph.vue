@@ -61,7 +61,7 @@ export default {
                     color: 'red',
                     isBar: false,
                     name: 'Test Data 2',
-                    yAxis: 1,
+                    yAxis: 0,
                     measurements: [
                         {
                             datetime: '2015-01-02',
@@ -313,10 +313,15 @@ export default {
               .attr("d", line);
             if (data.animateDraw) this.animatePathDraw(path, data);
         },
-        getDataByScale: function (axisNumber) {
+        /**
+         * Get all time series data that are using the given scale (either y0 or y1).
+         * 
+         * @param {0|1} axis Represents either y0 or y1 axis.
+         */
+        getDataByScale: function (axis) {
             return this.timeSeriesData.filter((d) => {
-                return d.yAxis === axisNumber;
-            })[0];
+                return d.yAxis === axis;
+            });
         },
         /**
          * Get the Y scaling function for the given time series.
