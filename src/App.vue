@@ -89,7 +89,10 @@ export default {
           return timeSeries;
       },
       /**
+       * Creates an object that corresponds to a random line graph visualization.
        * 
+       * @param {Number} numDataPts The number of data points to use in the time series.
+       * @param {Number} index The position of the visual in the dashboard.
        */
       generateRandomVisual: function (numDataPts, index) {
           var data =  [
@@ -102,6 +105,20 @@ export default {
                   measurements: this.generateRandomTimeSeries(numDataPts)
               }
           ]
+          if (Math.random() < 0.5) {
+              let randomYAxis = 0;
+              if (Math.random() < 0.5) randomYAxis = 1;
+              data.push(
+                {
+                  animateDraw: true,
+                  animateDrawDuration: 1000,
+                  color: 'orange',
+                  name: 'Graph ' + index,
+                  yAxis: randomYAxis,
+                  measurements: this.generateRandomTimeSeries(numDataPts)
+              }
+              )
+          }
           return {
               graphTitle: 'Graph ' + index,
               id: Math.ceil(Math.random()*5000),
@@ -121,8 +138,6 @@ export default {
           }
           this.$set(this, 'projectData', newProjectData); 
           console.log(this.projectData);
-          //this.projectData = newProjectData;
-          //console.log(this.projectData);
       },
       /**
        * Set the app data's number of visuals to match the

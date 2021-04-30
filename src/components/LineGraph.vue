@@ -145,7 +145,7 @@ export default {
         },
         marginRight: {
             type: Number,
-            default: 40
+            default: 60
         },
         strokeWidth: {
             type: Number,
@@ -172,7 +172,6 @@ export default {
         }
     },
     mounted: function () {
-        var i;
         this.graphTitleId = this.graphTitle.replaceAll(' ', '-');
         this.createSVG();
         this.createChart();
