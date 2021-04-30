@@ -10,6 +10,10 @@ import * as d3 from "d3";
 
 export default {
     name: 'LineGraph',
+    /**
+     * Props are immutable within the component itself,
+     * they're set by the parent component.
+     */
     props: {
         /* The data to visualize. This is an array of objects, where each
          * object has the keys 'isBar', 'measurements', and 'name'.
@@ -62,6 +66,7 @@ export default {
                     color: 'red',
                     isBar: false,
                     name: 'Test Data 2',
+                    referenceRange: [40, 140],
                     yAxis: 1,
                     measurements: [
                         {
@@ -182,7 +187,6 @@ export default {
         this.createTimeSeries(0);
         this.createTimeSeries(1);
 
-        this.createReferenceRange(0);
     },
     methods: {
         /**
@@ -206,6 +210,7 @@ export default {
          */
         createChart: function () {
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
+            this.chart.append("g").attr("id", "reference-ranges")
         },
         /**
          * Create y0 or y1 axis and draw its time series.
@@ -316,6 +321,9 @@ export default {
             const path = this.chart.append("path")
               .datum(data.measurements)
               .style("fill", "none")
+              .on("click", function () {
+                  self.createReferenceRange(data.yAxis);
+              })
               .attr("class", "line-graph")
               .attr("stroke", data.color)
               .attr("stroke-linejoin", "round")
@@ -330,15 +338,19 @@ export default {
          * @param {0|1} axis Represents either the y0 or y1 axis.
          */
         createReferenceRange: function (axis) {
+            console.log('here')
+            console.log(axis);
+            d3.select("#reference-range").remove();
             let yScale = this.getYScale(axis);
             let data = this.getDataByScale(axis)[0];
             let yVal1 = yScale(data.referenceRange[0]);
             let yVal2 = yScale(data.referenceRange[1]);
-            var rectData = [{x1: this.marginLeft, x2: this.width-this.marginRight, y1: yVal2, y2: yVal1}];
-            this.svg.selectAll('foo')
+            var rectData = [{x1: 0, x2: this.adjustedWidth, y1: yVal2, y2: yVal1}];
+            this.chart.select('#reference-ranges').selectAll('foo')
                 .data(rectData)
                 .enter()
                 .append('rect')
+                .attr("id", "reference-range")
                 .attr("x", d=> d.x1)
                 .attr("y", d=> d.y1)
                 .attr("width", d=> d.x2 - d.x1)
