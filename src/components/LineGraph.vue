@@ -177,23 +177,10 @@ export default {
         this.createSVG();
         this.createChart();
         this.createXScale();
-        let Y0 = this.getDataByScale(0);
-        if (Y0) {
-            this.createY0Scale(Y0);
-            this.createYAxis(0);
-            for (i = 0; i < Y0.length; i++) {
-                this.createLine(Y0[i]);
-            }
-        }
-        this.createXAxis(); // TODO: use Y0 and Y1 measurements!
-        let Y1 = this.getDataByScale(1);
-        if (Y1) {
-            this.createY1Scale(Y1);
-            this.createYAxis(1);
-            for (i = 0; i < Y1.length; i++) {
-                this.createLine(Y1[i]);
-            }
-        }
+        this.createXAxis();
+
+        this.createTimeSeries(0);
+        this.createTimeSeries(1);
     },
     methods: {
         /**
@@ -217,6 +204,18 @@ export default {
          */
         createChart: function () {
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
+        },
+        /**
+         * Create y0 or y1 axis and draw its time series.
+         * 
+         * @param {0|1} axis Represents either the y0 or y1 axis.
+         */
+        createTimeSeries: function (axis) {
+            const Y = this.getDataByScale(axis);
+            if (!Y) return;
+            this.createYScale(Y, axis);
+            this.createYAxis(axis);
+            for (var i = 0; i < Y.length; i++) this.createLine(Y[i]);
         },
         /**
          * Create the y0 or y1 axis in D3, depending on which number we pass as parameter.
@@ -246,24 +245,22 @@ export default {
         },
         /**
          * Create scale for first Y axis, on the left-hand side of the graph.
+         * 
+         * @param {Array[Object]} data All of the time series.
+         * @param {0|1} axis Represents either the y0 or y1 axis.
          */
-        createY0Scale: function (data) {
-            //let self = this;
+        createYScale: function (data, axis) {
             // Find the maximum value among all time series.
             const allMeasurements = data.map(d => d.measurements);
             const max = d3.max(allMeasurements,  function (d) { return d3.max(d, function (d) { return d.value }); });
-            this.y0Scale = d3.scaleLinear()
+            const scale = d3.scaleLinear()
               .range([this.adjustedHeight, 0])
               .domain([0, max]);
-              //.domain([0, d3.max(data, d => d.value)]);
-        },
-        createY1Scale: function (data) {
-            //let self = this;
-            const allMeasurements = data.map(d => d.measurements);
-            const max = d3.max(allMeasurements,  function (d) { return d3.max(d, function (d) { return d.value }); });
-            this.y1Scale = d3.scaleLinear()
-              .range([this.adjustedHeight, 0])
-              .domain([0, max]);
+            if (axis === 0) {
+                this.y0Scale = scale;
+            } else {
+                this.y1Scale = scale;
+            }
         },
         createXAxis: function () {
             this.chart
