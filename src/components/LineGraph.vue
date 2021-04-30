@@ -143,7 +143,7 @@ export default {
         },
         marginTop: {
             type: Number,
-            default: 10
+            default: 30
         },
         marginLeft: {
             type: Number,
@@ -253,7 +253,9 @@ export default {
                 .attr("class", "y-axis")
                 .attr("font-size", "20px")
                 .attr("transform", `translate(${xCoord}, 0)`)
-                .call(axisFn(yScale));
+                .call(axisFn(yScale)
+                    .tickFormat(d3.format("~s")) // Translates for instance, 100000 -> 100K
+                )
         },
         /**
          * Create scale for first Y axis, on the left-hand side of the graph.
@@ -267,7 +269,7 @@ export default {
             const max = d3.max(allMeasurements,  function (d) { return d3.max(d, function (d) { return d.value }); });
             const scale = d3.scaleLinear()
               .range([this.adjustedHeight, 0])
-              .domain([0, max]);
+              .domain([0, max*1.02]); // Expand the domain by 2% to add some room at top.
             if (axis === 0) {
                 this.y0Scale = scale;
             } else {
