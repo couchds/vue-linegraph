@@ -190,9 +190,8 @@ export default {
         if (Y1) {
             this.createY1Scale(Y1);
             this.createYAxis(1);
-            this.createLine(Y1);
             for (i = 0; i < Y1.length; i++) {
-                this.createLine(Y1);
+                this.createLine(Y1[i]);
             }
         }
     },
