@@ -11,8 +11,6 @@
       <label># of visuals:</label><input type="text" v-model="numVisualsInput" @change="updateNumVisuals" />
     </div>
 
-    <LineGraph />
-
     <div class="flex-row">
       <div class="flex-row-item" v-for="visual in projectData" :key="visual.id">
         <LineGraph :graphTitle="visual.graphTitle"

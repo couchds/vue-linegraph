@@ -168,6 +168,11 @@ export default {
     },
     data: function () {
         return {
+            /**
+             * The time series that the visualization is currently
+             * focusing on.
+            */
+            activeTimeSeries: null,
             chart: null,
             chartHeader: null,
             graphTitleId: this.graphTitle.replaceAll(' ', '-'),
@@ -322,7 +327,7 @@ export default {
               .datum(data.measurements)
               .style("fill", "none")
               .on("click", function () {
-                  self.createReferenceRange(data.yAxis);
+                  self.setActiveSeries(data);
               })
               .attr("class", "line-graph")
               .attr("stroke", data.color)
@@ -335,28 +340,27 @@ export default {
         /**
          * Draw a reference range in D3 using rectangle.
          * 
-         * @param {0|1} axis Represents either the y0 or y1 axis.
+         * @param {Object} series The time series that we are
+         * creating the reference range for.
          */
-        createReferenceRange: function (axis) {
-            console.log('here')
-            console.log(axis);
-            d3.select("#reference-range").remove();
-            let yScale = this.getYScale(axis);
-            let data = this.getDataByScale(axis)[0];
-            let yVal1 = yScale(data.referenceRange[0]);
-            let yVal2 = yScale(data.referenceRange[1]);
+        createReferenceRange: function (series) {
+            d3.select(".reference-range").remove(); // remove existing reference range.
+            let yScale = this.getYScale(series.yAxis);
+            let yVal1 = yScale(series.referenceRange[0]);
+            let yVal2 = yScale(series.referenceRange[1]);
             var rectData = [{x1: 0, x2: this.adjustedWidth, y1: yVal2, y2: yVal1}];
             this.chart.select('#reference-ranges').selectAll('foo')
                 .data(rectData)
                 .enter()
                 .append('rect')
-                .attr("id", "reference-range")
+                .attr("id", "reference-range-"+this.activeTimeSeries)
+                .attr("class", "reference-range")
                 .attr("x", d=> d.x1)
                 .attr("y", d=> d.y1)
                 .attr("width", d=> d.x2 - d.x1)
                 .attr("height", d=> d.y2 - d.y1)
-                .attr("fill", data.color)
-                .attr("opacity", 0.3);
+                .attr("fill", series.color)
+                .attr("opacity", 0.15);
         },
         /**
          * Get all time series data that are using the given scale (either y0 or y1).
@@ -376,6 +380,14 @@ export default {
                 0: this.y0Scale,
                 1: this.y1Scale
             }[seriesNumber];
+        },
+        /**
+         * Set a time series that we are focusing on within the visualization.
+         * This will highlight this specific series.
+         */
+        setActiveSeries: function (data) {
+            this.activeTimeSeries = data;
+            this.createReferenceRange(data);
         }
     }
 }
