@@ -133,7 +133,7 @@ export default {
         // Margins
         marginBottom: {
             type: Number,
-            default: 20
+            default: 30
         },
         marginTop: {
             type: Number,
@@ -313,6 +313,7 @@ export default {
             const path = this.chart.append("path")
               .datum(data.measurements)
               .style("fill", "none")
+              .attr("class", "line-graph")
               .attr("stroke", data.color)
               .attr("stroke-linejoin", "round")
               .attr("stroke-linecap", "round")

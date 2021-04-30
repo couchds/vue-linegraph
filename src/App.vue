@@ -229,4 +229,12 @@ html, body {
   margin-bottom: 12px;
 }
 
+.line-graph {
+  stroke-width: 3px;
+}
+
+.line-graph:hover {
+  stroke-width: 6px
+}
+
 </style>
