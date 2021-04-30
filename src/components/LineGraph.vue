@@ -23,6 +23,7 @@ export default {
                     color: 'steelblue',
                     isBar: false,
                     name: 'Test Data',
+                    referenceRange: [150, 300],
                     yAxis: 0,
                     measurements: [
                         {
@@ -180,6 +181,8 @@ export default {
 
         this.createTimeSeries(0);
         this.createTimeSeries(1);
+
+        this.createReferenceRange(0);
     },
     methods: {
         /**
@@ -320,6 +323,28 @@ export default {
               .attr("stroke-width", this.strokeWidth)
               .attr("d", line);
             if (data.animateDraw) this.animatePathDraw(path, data);
+        },
+        /**
+         * Draw a reference range in D3 using rectangle.
+         * 
+         * @param {0|1} axis Represents either the y0 or y1 axis.
+         */
+        createReferenceRange: function (axis) {
+            let yScale = this.getYScale(axis);
+            let data = this.getDataByScale(axis)[0];
+            let yVal1 = yScale(data.referenceRange[0]);
+            let yVal2 = yScale(data.referenceRange[1]);
+            var rectData = [{x1: this.marginLeft, x2: this.width-this.marginRight, y1: yVal2, y2: yVal1}];
+            this.svg.selectAll('foo')
+                .data(rectData)
+                .enter()
+                .append('rect')
+                .attr("x", d=> d.x1)
+                .attr("y", d=> d.y1)
+                .attr("width", d=> d.x2 - d.x1)
+                .attr("height", d=> d.y2 - d.y1)
+                .attr("fill", data.color)
+                .attr("opacity", 0.3);
         },
         /**
          * Get all time series data that are using the given scale (either y0 or y1).
