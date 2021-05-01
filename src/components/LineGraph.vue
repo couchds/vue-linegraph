@@ -308,6 +308,9 @@ export default {
               .range([0, self.adjustedWidth])
               .domain([min, max]);
         },
+        /*
+         * Creates the svg container element for the entire component.
+        */
         createSVG: function () {
             d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
             this.svg = d3.select('#'+this.graphTitleId).append('svg')
