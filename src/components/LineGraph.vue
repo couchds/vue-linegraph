@@ -235,6 +235,7 @@ export default {
          * @param {0|1} axis Represents either the y0 or y1 axis.
          */
         createYAxis: function (axis) {
+            let timeSeries = this.getDataByScale(axis);
             // Use the D3 axis function that corresponds to y0 (left) or y1 (right) axis.
             let axisFn = {
                 0: d3.axisLeft,
@@ -251,6 +252,9 @@ export default {
             this.chart
                 .append("g")
                 .attr("class", "y-axis")
+                .attr("color", function(){
+                    return timeSeries[0]["color"];
+                })
                 .attr("font-size", "20px")
                 .attr("transform", `translate(${xCoord}, 0)`)
                 .call(axisFn(yScale)
@@ -292,18 +296,19 @@ export default {
         createXScale: function () {
             var min, max, searchArg;
             let self = this;
-            let Y0 = this.getDataByScale(0);
-            let Y1 = this.getDataByScale(1);
+            //Y0 is an array of objects
+            let Y0TimeSeries = this.getDataByScale(0);
+            let Y1TimeSeries = this.getDataByScale(1);
             // If we have a second time series we consider it along with the first.
-            if (Y1) {
-                searchArg = (Y0.map(d => d.measurements)).concat(Y1.map(d => d.measurements));
+            if (Y1TimeSeries) {
+                searchArg = (Y0TimeSeries.map(d => d.measurements)).concat(Y1TimeSeries.map(d => d.measurements));
             } else {
-                searchArg = Y0.map(d => d.measurements);
+                searchArg = Y0TimeSeries.map(d => d.measurements);
             }
             var parse = d3.timeParse(this.datetimeFormat);
             // Get min of min of each time series, and same for max.
             min = d3.min(searchArg, function (d) { return d3.min(d, function (d) { return parse(d.datetime) }); });
-            max = d3.max(searchArg,  function (d) { return d3.max(d, function (d) { return parse(d.datetime) }); });
+            max = d3.max(searchArg, function (d) { return d3.max(d, function (d) { return parse(d.datetime) }); });
             this.xScale = d3.scaleTime()
               .range([0, self.adjustedWidth])
               .domain([min, max]);
