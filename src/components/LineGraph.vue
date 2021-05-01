@@ -10,6 +10,10 @@ import * as d3 from "d3";
 
 export default {
     name: 'LineGraph',
+    /**
+     * Props are immutable within the component itself,
+     * they're set by the parent component.
+     */
     props: {
         /* The data to visualize. This is an array of objects, where each
          * object has the keys 'isBar', 'measurements', and 'name'.
@@ -23,6 +27,7 @@ export default {
                     color: 'steelblue',
                     isBar: false,
                     name: 'Test Data',
+                    referenceRange: [150, 300],
                     yAxis: 0,
                     measurements: [
                         {
@@ -61,6 +66,7 @@ export default {
                     color: 'red',
                     isBar: false,
                     name: 'Test Data 2',
+                    referenceRange: [40, 140],
                     yAxis: 1,
                     measurements: [
                         {
@@ -137,7 +143,7 @@ export default {
         },
         marginTop: {
             type: Number,
-            default: 10
+            default: 30
         },
         marginLeft: {
             type: Number,
@@ -162,6 +168,11 @@ export default {
     },
     data: function () {
         return {
+            /**
+             * The time series that the visualization is currently
+             * focusing on.
+            */
+            activeTimeSeries: null,
             chart: null,
             chartHeader: null,
             graphTitleId: this.graphTitle.replaceAll(' ', '-'),
@@ -180,6 +191,7 @@ export default {
 
         this.createTimeSeries(0);
         this.createTimeSeries(1);
+
     },
     methods: {
         /**
@@ -203,6 +215,7 @@ export default {
          */
         createChart: function () {
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
+            this.chart.append("g").attr("id", "reference-ranges")
         },
         /**
          * Create y0 or y1 axis and draw its time series.
@@ -240,7 +253,9 @@ export default {
                 .attr("class", "y-axis")
                 .attr("font-size", "20px")
                 .attr("transform", `translate(${xCoord}, 0)`)
-                .call(axisFn(yScale));
+                .call(axisFn(yScale)
+                    .tickFormat(d3.format("~s")) // Translates for instance, 100000 -> 100K
+                )
         },
         /**
          * Create scale for first Y axis, on the left-hand side of the graph.
@@ -254,7 +269,7 @@ export default {
             const max = d3.max(allMeasurements,  function (d) { return d3.max(d, function (d) { return d.value }); });
             const scale = d3.scaleLinear()
               .range([this.adjustedHeight, 0])
-              .domain([0, max]);
+              .domain([0, max*1.02]); // Expand the domain by 2% to add some room at top.
             if (axis === 0) {
                 this.y0Scale = scale;
             } else {
@@ -313,6 +328,9 @@ export default {
             const path = this.chart.append("path")
               .datum(data.measurements)
               .style("fill", "none")
+              .on("click", function () {
+                  self.setActiveSeries(data);
+              })
               .attr("class", "line-graph")
               .attr("stroke", data.color)
               .attr("stroke-linejoin", "round")
@@ -320,6 +338,31 @@ export default {
               .attr("stroke-width", this.strokeWidth)
               .attr("d", line);
             if (data.animateDraw) this.animatePathDraw(path, data);
+        },
+        /**
+         * Draw a reference range in D3 using rectangle.
+         * 
+         * @param {Object} series The time series that we are
+         * creating the reference range for.
+         */
+        createReferenceRange: function (series) {
+            d3.select(".reference-range").remove(); // remove existing reference range.
+            let yScale = this.getYScale(series.yAxis);
+            let yVal1 = yScale(series.referenceRange[0]);
+            let yVal2 = yScale(series.referenceRange[1]);
+            var rectData = [{x1: 0, x2: this.adjustedWidth, y1: yVal2, y2: yVal1}];
+            this.chart.select('#reference-ranges').selectAll('foo')
+                .data(rectData)
+                .enter()
+                .append('rect')
+                .attr("id", "reference-range-"+this.activeTimeSeries)
+                .attr("class", "reference-range")
+                .attr("x", d=> d.x1)
+                .attr("y", d=> d.y1)
+                .attr("width", d=> d.x2 - d.x1)
+                .attr("height", d=> d.y2 - d.y1)
+                .attr("fill", series.color)
+                .attr("opacity", 0.15);
         },
         /**
          * Get all time series data that are using the given scale (either y0 or y1).
@@ -339,6 +382,14 @@ export default {
                 0: this.y0Scale,
                 1: this.y1Scale
             }[seriesNumber];
+        },
+        /**
+         * Set a time series that we are focusing on within the visualization.
+         * This will highlight this specific series.
+         */
+        setActiveSeries: function (data) {
+            this.activeTimeSeries = data;
+            this.createReferenceRange(data);
         }
     }
 }
