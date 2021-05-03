@@ -425,7 +425,7 @@ export default {
          * creating the reference range for.
          */
         drawReferenceRange: function (series) {
-            d3.select(".reference-range").remove(); // remove existing reference range.
+            d3.select(".reference-range-"+this.graphTitleId).remove(); // remove existing reference range.
             let yScale = this.getYScale(series.yAxis);
             let yVal1 = yScale(series.referenceRange[0]);
             let yVal2 = yScale(series.referenceRange[1]);
@@ -435,7 +435,7 @@ export default {
                 .enter()
                 .append('rect')
                 .attr("id", "reference-range-"+this.focusedTimeSeries)
-                .attr("class", "reference-range")
+                .attr("class", "reference-range-"+this.graphTitleId)
                 .attr("x", d=> d.x1)
                 .attr("y", d=> d.y1)
                 .attr("width", d=> d.x2 - d.x1)
