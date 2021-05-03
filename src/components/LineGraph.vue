@@ -63,7 +63,7 @@ export default {
                     ]
                 },
                 {
-                    active: false,
+                    active: true,
                     animateDraw: false,
                     animateDrawDuration: null,
                     color: 'red',
@@ -195,8 +195,6 @@ export default {
 
         this.createTimeSeries(0);
         this.createTimeSeries(1);
-
-        this.setActive('Test Data 2', false); // testing 
 
     },
     methods: {
@@ -346,9 +344,9 @@ export default {
               .datum(data.measurements)
               .style("fill", "none")
               .on("click", function () {
-                  self.setActiveSeries(data);
+                  self.setFocusedSeries(data);
               })
-              .attr("class", "line-graph " + data.name)
+              .attr("class", "line-graph " + this.htmlCompatible(data.name))
               .attr("stroke", data.color)
               .attr("stroke-linejoin", "round")
               .attr("stroke-linecap", "round")
@@ -399,7 +397,7 @@ export default {
                 .data(criticalValues)
                 .enter()
                 .append("circle")
-                .attr("class", "critical-value")
+                .attr("class", "critical-value " + this.htmlCompatible(series.name))
                 .attr("fill", series.color)
                 .attr("stroke", series.color)
                 .attr("r", 5)
@@ -435,6 +433,11 @@ export default {
                 return d.name === seriesName
             })[0];
             selectedTimeSeries.active = value;
+            if (value === false) {
+                d3.select("#"+this.graphTitleId).select('.'+this.htmlCompatible(seriesName)).attr("display", "none");
+            } else {
+                d3.select("#"+this.graphTitleId).select('.'+this.htmlCompatible(seriesName)).attr("display", "block");
+            }
         },
         /**
          * Set a time series that we are focusing on within the visualization.
