@@ -358,7 +358,7 @@ export default {
          * @param {Object} series The time series that we are
          * creating the reference range for.
          */
-        createReferenceRange: function (series) {
+        drawReferenceRange: function (series) {
             d3.select(".reference-range").remove(); // remove existing reference range.
             let yScale = this.getYScale(series.yAxis);
             let yVal1 = yScale(series.referenceRange[0]);
@@ -428,7 +428,7 @@ export default {
          */
         setActiveSeries: function (data) {
             this.activeTimeSeries = data;
-            this.createReferenceRange(data);
+            this.drawReferenceRange(data);
         }
     }
 }
