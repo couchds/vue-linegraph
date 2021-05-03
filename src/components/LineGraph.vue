@@ -71,34 +71,36 @@ export default {
                     isBar: false,
                     name: 'Test Data 2',
                     referenceRange: [40, 140],
+                    timespanValue: 720,
+                    timespanUnits: 'h', // for hours
                     yAxis: 1,
                     measurements: [
                         {
-                            datetime: '2015-01-02',
+                            datetime: '2015-01-10',
                             value: 30
                         },
                         {
-                            datetime: '2015-02-02',
+                            datetime: '2015-02-10',
                             value: 120
                         },
                         {
-                            datetime: '2015-03-02',
+                            datetime: '2015-03-10',
                             value: 170
                         },
                         {
-                            datetime: '2015-04-02',
+                            datetime: '2015-04-10',
                             value: 160
                         },
                         {
-                            datetime: '2015-05-02',
+                            datetime: '2015-05-10',
                             value: 150
                         },
                         {
-                            datetime: '2015-06-02',
+                            datetime: '2015-06-10',
                             value: 140
                         },
                         {
-                            datetime: '2015-07-02',
+                            datetime: '2015-07-105',
                             value: 100
                         }
                     ]
@@ -180,6 +182,7 @@ export default {
             chart: null,
             chartHeader: null,
             graphTitleId: this.htmlCompatible(this.graphTitle),
+            minDatetime: null, // this will be used to calculate bar width.
             svg: null,
             xScale: null,
             y0Scale: null,
@@ -192,7 +195,6 @@ export default {
         this.createChart();
         this.createXScale();
         this.drawXAxis();
-
         this.createTimeSeries(0);
         this.createTimeSeries(1);
 
@@ -215,6 +217,14 @@ export default {
               .attr("stroke-dashoffset", 0);
         },
         /**
+         * Returns the width of a single bar in a chart.
+         */
+        calculateBarWidth: function () {
+            const DTStop = new Date(this.minDatetime);
+            DTStop.setHours(DTStop.getHours() + 5);
+            return this.xScale(DTStop);
+        },
+        /**
          * Create the g element for the chart that we will contain the visualization.
          */
         createChart: function () {
@@ -232,10 +242,20 @@ export default {
             this.createYScale(Y, axis);
             this.drawYAxis(axis);
             for (var i = 0; i < Y.length; i++) {
+                if (Y[i]["isBar"] === false) {
+                    this.drawLine(Y[i]);
+                } else {
+                    this.drawBars(Y[i]);
+                }
                 this.drawLine(Y[i]);
-                console.log(Y[i]);
                 if (Y[i]['criticalValues']) this.drawCriticalValues(Y[i]);
             }
+        },
+        drawBars: function (series) {
+            var barWidth = this.calculateBarWidth();
+            //this.chart.selectAll(".bar")
+            //    .data()
+
         },
         /**
          * Create the y0 or y1 axis in D3, depending on which number we pass as parameter.
@@ -319,6 +339,7 @@ export default {
             this.xScale = d3.scaleTime()
               .range([0, self.adjustedWidth])
               .domain([min, max]);
+            this.minDatetime = min;
         },
         /*
          * Creates the svg container element for the entire component.
@@ -327,7 +348,6 @@ export default {
             d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
             this.svg = d3.select('#'+this.graphTitleId).append('svg')
               .attr("viewBox", `0 0 ` + this.width + ` ` + this.height); // we setup with viewBox to add responsiveness.
-            console.log(this.svg);
         },
         drawLine: function (data) {
             let self = this;
