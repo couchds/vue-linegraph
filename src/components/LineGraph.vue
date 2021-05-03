@@ -446,6 +446,7 @@ export default {
         },
         /**
          * Convert string to format compatible as an HTML id or class.
+         * Credit to https://stackoverflow.com/questions/10619126/make-sure-string-is-a-valid-css-id-name
          * 
          * @param {String} string The string we want to convert. 
          */
