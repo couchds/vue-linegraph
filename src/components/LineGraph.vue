@@ -25,6 +25,7 @@ export default {
                     animateDraw: true,
                     animateDrawDuration: 1000,
                     color: 'steelblue',
+                    criticalValues: [120, 350],
                     isBar: false,
                     name: 'Test Data',
                     referenceRange: [150, 300],
@@ -64,6 +65,7 @@ export default {
                     animateDraw: false,
                     animateDrawDuration: null,
                     color: 'red',
+                    criticalValues: null,
                     isBar: false,
                     name: 'Test Data 2',
                     referenceRange: [40, 140],
@@ -227,7 +229,11 @@ export default {
             if (!Y) return;
             this.createYScale(Y, axis);
             this.createYAxis(axis);
-            for (var i = 0; i < Y.length; i++) this.createLine(Y[i]);
+            for (var i = 0; i < Y.length; i++) {
+                this.createLine(Y[i]);
+                console.log(Y[i]);
+                if (Y[i]['criticalValues']) this.drawCriticalValues(Y[i]);
+            }
         },
         /**
          * Create the y0 or y1 axis in D3, depending on which number we pass as parameter.
@@ -325,7 +331,6 @@ export default {
         createLine: function (data) {
             let self = this;
             let yScale = this.getYScale(data.yAxis);
-            console.log(this.datetimeFormat);
             var parse = d3.timeParse(this.datetimeFormat);
             // Line constructor 
             const line = d3
@@ -353,7 +358,7 @@ export default {
          * @param {Object} series The time series that we are
          * creating the reference range for.
          */
-        createReferenceRange: function (series) {
+        drawReferenceRange: function (series) {
             d3.select(".reference-range").remove(); // remove existing reference range.
             let yScale = this.getYScale(series.yAxis);
             let yVal1 = yScale(series.referenceRange[0]);
@@ -371,6 +376,32 @@ export default {
                 .attr("height", d=> d.y2 - d.y1)
                 .attr("fill", series.color)
                 .attr("opacity", 0.15);
+        },
+        /**
+         * Draw the critical values in D3 using circles for each one.
+         * 
+         * @param {Object} series The time series that we are
+         * creating the reference range for.
+         */
+        drawCriticalValues: function (series) {
+            let yScale = this.getYScale(series.yAxis);
+            let yVal1 = yScale(series.criticalValues[0]);
+            let yVal2 = yScale(series.criticalValues[1]);
+            let criticalValues = series.measurements.filter((d) => {
+                    return d.value <= yVal1 || d.value <= yVal2;
+            });
+            var parse = d3.timeParse(this.datetimeFormat);
+            this.chart.selectAll("circle")
+                .data(criticalValues)
+                .enter()
+                .append("circle")
+                .attr("class", "critical-value")
+                .attr("fill", series.color)
+                .attr("stroke", series.color)
+                .attr("r", 5)
+                .attr("cx", d => this.xScale(parse(d.datetime)))
+                .attr("cy", d => yScale(d.value));
+
         },
         /**
          * Get all time series data that are using the given scale (either y0 or y1).
@@ -397,7 +428,7 @@ export default {
          */
         setActiveSeries: function (data) {
             this.activeTimeSeries = data;
-            this.createReferenceRange(data);
+            this.drawReferenceRange(data);
         }
     }
 }
