@@ -22,6 +22,7 @@ export default {
             type: Array,
             default: () => {
                 return [{
+                    active: true,
                     animateDraw: true,
                     animateDrawDuration: 1000,
                     color: 'steelblue',
@@ -62,6 +63,7 @@ export default {
                     ]
                 },
                 {
+                    active: true,
                     animateDraw: false,
                     animateDrawDuration: null,
                     color: 'red',
@@ -174,10 +176,10 @@ export default {
              * The time series that the visualization is currently
              * focusing on.
             */
-            activeTimeSeries: null,
+            focusedTimeSeries: null,
             chart: null,
             chartHeader: null,
-            graphTitleId: this.graphTitle.replaceAll(' ', '-'),
+            graphTitleId: this.htmlCompatible(this.graphTitle),
             svg: null,
             xScale: null,
             y0Scale: null,
@@ -185,11 +187,11 @@ export default {
         }
     },
     mounted: function () {
-        this.graphTitleId = this.graphTitle.replaceAll(' ', '-');
+        this.graphTitleId = this.htmlCompatible(this.graphTitle);
         this.createSVG();
         this.createChart();
         this.createXScale();
-        this.createXAxis();
+        this.drawXAxis();
 
         this.createTimeSeries(0);
         this.createTimeSeries(1);
@@ -228,9 +230,9 @@ export default {
             const Y = this.getDataByScale(axis);
             if (!Y) return;
             this.createYScale(Y, axis);
-            this.createYAxis(axis);
+            this.drawYAxis(axis);
             for (var i = 0; i < Y.length; i++) {
-                this.createLine(Y[i]);
+                this.drawLine(Y[i]);
                 console.log(Y[i]);
                 if (Y[i]['criticalValues']) this.drawCriticalValues(Y[i]);
             }
@@ -240,7 +242,7 @@ export default {
          * 
          * @param {0|1} axis Represents either the y0 or y1 axis.
          */
-        createYAxis: function (axis) {
+        drawYAxis: function (axis) {
             let timeSeries = this.getDataByScale(axis);
             // Use the D3 axis function that corresponds to y0 (left) or y1 (right) axis.
             let axisFn = {
@@ -286,13 +288,12 @@ export default {
                 this.y1Scale = scale;
             }
         },
-        createXAxis: function () {
+        drawXAxis: function () {
             this.chart
               .append("g")
               .attr("class", "x-axis")
               .attr("transform", `translate(0,${this.adjustedHeight})`)
               .call(d3.axisBottom(this.xScale).ticks(10));
-              //.call(d3.axisBottom(this.xScale).ticks(data.length));
         },
         /** 
          * Create X scale that maps datetime to coordinate.
@@ -328,7 +329,7 @@ export default {
               .attr("viewBox", `0 0 ` + this.width + ` ` + this.height); // we setup with viewBox to add responsiveness.
             console.log(this.svg);
         },
-        createLine: function (data) {
+        drawLine: function (data) {
             let self = this;
             let yScale = this.getYScale(data.yAxis);
             var parse = d3.timeParse(this.datetimeFormat);
@@ -342,9 +343,9 @@ export default {
               .datum(data.measurements)
               .style("fill", "none")
               .on("click", function () {
-                  self.setActiveSeries(data);
+                  self.setFocusedSeries(data);
               })
-              .attr("class", "line-graph")
+              .attr("class", "line-graph " + this.htmlCompatible(data.name))
               .attr("stroke", data.color)
               .attr("stroke-linejoin", "round")
               .attr("stroke-linecap", "round")
@@ -368,7 +369,7 @@ export default {
                 .data(rectData)
                 .enter()
                 .append('rect')
-                .attr("id", "reference-range-"+this.activeTimeSeries)
+                .attr("id", "reference-range-"+this.focusedTimeSeries)
                 .attr("class", "reference-range")
                 .attr("x", d=> d.x1)
                 .attr("y", d=> d.y1)
@@ -395,7 +396,7 @@ export default {
                 .data(criticalValues)
                 .enter()
                 .append("circle")
-                .attr("class", "critical-value")
+                .attr("class", "critical-value " + this.htmlCompatible(series.name))
                 .attr("fill", series.color)
                 .attr("stroke", series.color)
                 .attr("r", 5)
@@ -423,12 +424,36 @@ export default {
             }[seriesNumber];
         },
         /**
+         * For a given time series, set if it is active or not; i.e. if
+         * it is shown to the user or not.
+         */
+        setActive: function (seriesName, value) {
+            let selectedTimeSeries = this.timeSeriesData.filter((d) => {
+                return d.name === seriesName
+            })[0];
+            selectedTimeSeries.active = value;
+            if (value === false) {
+                d3.select("#"+this.graphTitleId).select('.'+this.htmlCompatible(seriesName)).attr("display", "none");
+            } else {
+                d3.select("#"+this.graphTitleId).select('.'+this.htmlCompatible(seriesName)).attr("display", "block");
+            }
+        },
+        /**
          * Set a time series that we are focusing on within the visualization.
          * This will highlight this specific series.
          */
-        setActiveSeries: function (data) {
-            this.activeTimeSeries = data;
+        setFocusedSeries: function (data) {
+            this.focusedimeSeries = data;
             this.drawReferenceRange(data);
+        },
+        /**
+         * Convert string to format compatible as an HTML id or class.
+         * Credit to https://stackoverflow.com/questions/10619126/make-sure-string-is-a-valid-css-id-name
+         * 
+         * @param {String} string The string we want to convert. 
+         */
+        htmlCompatible: function (string) {
+            return string.replace(/(^-\d-|^\d|^-\d|^--)/,'a$1').replace(/[\W]/g, '-');
         }
     }
 }
