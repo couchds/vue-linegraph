@@ -68,7 +68,7 @@ export default {
                     animateDrawDuration: null,
                     color: 'red',
                     criticalValues: null,
-                    isBar: false,
+                    isBar: true,
                     name: 'Test Data 2',
                     referenceRange: [40, 140],
                     timespanValue: 720,
@@ -76,31 +76,31 @@ export default {
                     yAxis: 1,
                     measurements: [
                         {
-                            datetime: '2015-01-10',
-                            value: 30
+                            datetime: '2015-01-02',
+                            value: 60
                         },
                         {
-                            datetime: '2015-02-10',
+                            datetime: '2015-02-02',
                             value: 120
                         },
                         {
-                            datetime: '2015-03-10',
+                            datetime: '2015-03-02',
                             value: 170
                         },
                         {
-                            datetime: '2015-04-10',
+                            datetime: '2015-04-02',
                             value: 160
                         },
                         {
-                            datetime: '2015-05-10',
+                            datetime: '2015-05-02',
                             value: 150
                         },
                         {
-                            datetime: '2015-06-10',
+                            datetime: '2015-06-02',
                             value: 140
                         },
                         {
-                            datetime: '2015-07-10',
+                            datetime: '2015-07-02',
                             value: 100
                         }
                     ]
@@ -221,7 +221,7 @@ export default {
          */
         calculateBarWidth: function () {
             const DTStop = new Date(this.minDatetime);
-            DTStop.setHours(DTStop.getHours() + 5);
+            DTStop.setHours(DTStop.getHours() + (24*15));
             return this.xScale(DTStop);
         },
         /**
@@ -247,16 +247,27 @@ export default {
                 } else {
                     this.drawBars(Y[i]);
                 }
-                this.drawLine(Y[i]);
                 if (Y[i]['criticalValues']) this.drawCriticalValues(Y[i]);
             }
         },
         drawBars: function (series) {
-            console.log(series);
             var barWidth = this.calculateBarWidth();
-            console.log(barWidth);
-            //this.chart.selectAll(".bar")
-            //    .data()
+            console.log(barWidth)
+            let self = this;
+            let yScale = this.getYScale(series.yAxis);
+            var parse = d3.timeParse(this.datetimeFormat);
+            console.log(series.measurements)
+            this.chart.selectAll(".bar")
+                .data(series.measurements)
+                .enter()
+                .append("rect")
+                    .attr("class", "bar")
+                    .attr("fill", function () { return series.color; })
+                    .attr("x", function(d) { return self.xScale(parse(d.datetime)); })
+                    .attr("y", function(d) { return yScale(d.value); })
+                    .attr("width", barWidth)
+                    .attr("height", function(d) { 
+                        return self.adjustedHeight - yScale(d.value); });
 
         },
         /**
