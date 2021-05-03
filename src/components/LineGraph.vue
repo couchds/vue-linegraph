@@ -68,37 +68,39 @@ export default {
                     animateDrawDuration: null,
                     color: 'red',
                     criticalValues: null,
-                    isBar: false,
+                    isBar: true,
                     name: 'Test Data 2',
                     referenceRange: [40, 140],
+                    timespanValue: 360,
+                    timespanUnits: 'h', // for hours
                     yAxis: 1,
                     measurements: [
                         {
-                            datetime: '2015-01-02',
-                            value: 30
+                            datetime: '2015-01-01',
+                            value: 60
                         },
                         {
-                            datetime: '2015-02-02',
+                            datetime: '2015-02-01',
                             value: 120
                         },
                         {
-                            datetime: '2015-03-02',
+                            datetime: '2015-03-01',
                             value: 170
                         },
                         {
-                            datetime: '2015-04-02',
+                            datetime: '2015-04-01',
                             value: 160
                         },
                         {
-                            datetime: '2015-05-02',
+                            datetime: '2015-05-01',
                             value: 150
                         },
                         {
-                            datetime: '2015-06-02',
+                            datetime: '2015-06-01',
                             value: 140
                         },
                         {
-                            datetime: '2015-07-02',
+                            datetime: '2015-07-01',
                             value: 100
                         }
                     ]
@@ -180,6 +182,7 @@ export default {
             chart: null,
             chartHeader: null,
             graphTitleId: this.htmlCompatible(this.graphTitle),
+            minDatetime: null, // this will be used to calculate bar width.
             svg: null,
             xScale: null,
             y0Scale: null,
@@ -193,9 +196,19 @@ export default {
         this.createXScale();
         this.drawXAxis();
 
-        this.createTimeSeries(0);
-        this.createTimeSeries(1);
+        
+        const drawingQueue = this.createDrawingQueue();
 
+        // refactor
+        let Y = this.getDataByScale(0);
+        this.createYScale(Y, 0);
+        this.drawYAxis(0);
+
+        let Y1 = this.getDataByScale(1);
+        this.createYScale(Y1, 1);
+        this.drawYAxis(1);
+
+        for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);
     },
     methods: {
         /**
@@ -215,6 +228,14 @@ export default {
               .attr("stroke-dashoffset", 0);
         },
         /**
+         * Returns the width of a single bar in a chart.
+         */
+        calculateBarWidth: function (series) {
+            const DTStop = new Date(this.minDatetime);
+            DTStop.setHours(DTStop.getHours() + (series.timespanValue));
+            return this.xScale(DTStop);
+        },
+        /**
          * Create the g element for the chart that we will contain the visualization.
          */
         createChart: function () {
@@ -222,20 +243,60 @@ export default {
             this.chart.append("g").attr("id", "reference-ranges")
         },
         /**
-         * Create y0 or y1 axis and draw its time series.
-         * 
-         * @param {0|1} axis Represents either the y0 or y1 axis.
+         * Create queue which has the order that time series should be drawn.
+         * This ensures that bars are drawn before lines, so that lines appear
+         * on top of the bars.
          */
-        createTimeSeries: function (axis) {
-            const Y = this.getDataByScale(axis);
-            if (!Y) return;
-            this.createYScale(Y, axis);
-            this.drawYAxis(axis);
-            for (var i = 0; i < Y.length; i++) {
-                this.drawLine(Y[i]);
-                console.log(Y[i]);
-                if (Y[i]['criticalValues']) this.drawCriticalValues(Y[i]);
+        createDrawingQueue: function () {
+            let drawingQueue = [];
+            const Y = this.getDataByScale(0);
+            const Y1 = this.getDataByScale(1);
+            for (var i = 0; i < Y.concat(Y1).length; i++) {
+                if (Y.concat(Y1)[i]["isBar"] === true) drawingQueue.push(Y.concat(Y1)[i]["name"]);
             }
+            for (i = 0; i < Y.concat(Y1).length; i++) {
+                if (Y.concat(Y1)[i]["isBar"] === false) drawingQueue.push(Y.concat(Y1)[i]["name"]);
+            }
+            return drawingQueue;
+        },
+        /**
+         * Create a time series from its name.
+         * 
+         * @param {String} name The name of the time series.
+         */
+        createTimeSeries: function (name) {
+            const Y = this.getDataByScale(0);
+            const Y1 = this.getDataByScale(1);
+            let timeSeries = Y.concat(Y1).find(d => d.name === name);
+            if (timeSeries === undefined) return;
+            // Refactor this?
+            if (timeSeries["isBar"] === true) this.drawBars(timeSeries);
+            if (timeSeries["isBar"] === false) this.drawLine(timeSeries);
+            if (timeSeries["criticalValues"]) this.drawCriticalValues(timeSeries);
+        },
+        /**
+         * Draw the bars for a time series represented as a bar graph.
+         * 
+         * @param {Object} series The time series.
+         */
+        drawBars: function (series) {
+            var barWidth = this.calculateBarWidth(series);
+            let self = this;
+            let yScale = this.getYScale(series.yAxis);
+            var parse = d3.timeParse(this.datetimeFormat);
+            this.chart.selectAll(".bar")
+                .data(series.measurements)
+                .enter()
+                .append("rect")
+                    .attr("class", "bar")
+                    .attr("fill", function () { return series.color; })
+                    .attr("fill-opacity", "30%")
+                    .attr("x", function(d) { return self.xScale(parse(d.datetime)); })
+                    .attr("y", function(d) { return yScale(d.value); })
+                    .attr("width", barWidth)
+                    .attr("height", function(d) { 
+                        return self.adjustedHeight - yScale(d.value); 
+                    });
         },
         /**
          * Create the y0 or y1 axis in D3, depending on which number we pass as parameter.
@@ -316,9 +377,14 @@ export default {
             // Get min of min of each time series, and same for max.
             min = d3.min(searchArg, function (d) { return d3.min(d, function (d) { return parse(d.datetime) }); });
             max = d3.max(searchArg, function (d) { return d3.max(d, function (d) { return parse(d.datetime) }); });
+
+            if (this.timeSeriesHasBarGraph(Y0TimeSeries) || this.timeSeriesHasBarGraph(Y1TimeSeries)) {
+                max.setHours(max.getHours() + (24*15)); // TODO: get the specific time to extend this by.
+            }
             this.xScale = d3.scaleTime()
               .range([0, self.adjustedWidth])
               .domain([min, max]);
+            this.minDatetime = min;
         },
         /*
          * Creates the svg container element for the entire component.
@@ -327,7 +393,6 @@ export default {
             d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
             this.svg = d3.select('#'+this.graphTitleId).append('svg')
               .attr("viewBox", `0 0 ` + this.width + ` ` + this.height); // we setup with viewBox to add responsiveness.
-            console.log(this.svg);
         },
         drawLine: function (data) {
             let self = this;
@@ -386,10 +451,8 @@ export default {
          */
         drawCriticalValues: function (series) {
             let yScale = this.getYScale(series.yAxis);
-            let yVal1 = yScale(series.criticalValues[0]);
-            let yVal2 = yScale(series.criticalValues[1]);
             let criticalValues = series.measurements.filter((d) => {
-                    return d.value <= yVal1 || d.value <= yVal2;
+                    return (d.value <= series.criticalValues[0]) || (d.value >= series.criticalValues[1]);
             });
             var parse = d3.timeParse(this.datetimeFormat);
             this.chart.selectAll("circle")
@@ -445,6 +508,14 @@ export default {
         setFocusedSeries: function (data) {
             this.focusedimeSeries = data;
             this.drawReferenceRange(data);
+        },
+        /**
+         * Check if 
+         */
+        timeSeriesHasBarGraph(timeSeries) {
+            return timeSeries.filter((d) => {
+                return d.isBar === true;
+            }).length > 0;
         },
         /**
          * Convert string to format compatible as an HTML id or class.
