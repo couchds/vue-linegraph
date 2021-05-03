@@ -191,7 +191,7 @@ export default {
         this.createSVG();
         this.createChart();
         this.createXScale();
-        this.createXAxis();
+        this.drawXAxis();
 
         this.createTimeSeries(0);
         this.createTimeSeries(1);
@@ -230,9 +230,9 @@ export default {
             const Y = this.getDataByScale(axis);
             if (!Y) return;
             this.createYScale(Y, axis);
-            this.createYAxis(axis);
+            this.drawYAxis(axis);
             for (var i = 0; i < Y.length; i++) {
-                this.createLine(Y[i]);
+                this.drawLine(Y[i]);
                 console.log(Y[i]);
                 if (Y[i]['criticalValues']) this.drawCriticalValues(Y[i]);
             }
@@ -242,7 +242,7 @@ export default {
          * 
          * @param {0|1} axis Represents either the y0 or y1 axis.
          */
-        createYAxis: function (axis) {
+        drawYAxis: function (axis) {
             let timeSeries = this.getDataByScale(axis);
             // Use the D3 axis function that corresponds to y0 (left) or y1 (right) axis.
             let axisFn = {
@@ -288,13 +288,12 @@ export default {
                 this.y1Scale = scale;
             }
         },
-        createXAxis: function () {
+        drawXAxis: function () {
             this.chart
               .append("g")
               .attr("class", "x-axis")
               .attr("transform", `translate(0,${this.adjustedHeight})`)
               .call(d3.axisBottom(this.xScale).ticks(10));
-              //.call(d3.axisBottom(this.xScale).ticks(data.length));
         },
         /** 
          * Create X scale that maps datetime to coordinate.
@@ -330,7 +329,7 @@ export default {
               .attr("viewBox", `0 0 ` + this.width + ` ` + this.height); // we setup with viewBox to add responsiveness.
             console.log(this.svg);
         },
-        createLine: function (data) {
+        drawLine: function (data) {
             let self = this;
             let yScale = this.getYScale(data.yAxis);
             var parse = d3.timeParse(this.datetimeFormat);
