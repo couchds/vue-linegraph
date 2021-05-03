@@ -198,7 +198,8 @@ export default {
 
         
         const drawingQueue = this.createDrawingQueue();
-        console.log(drawingQueue);
+
+        // refactor
         let Y = this.getDataByScale(0);
         this.createYScale(Y, 0);
         this.drawYAxis(0);
@@ -208,11 +209,6 @@ export default {
         this.drawYAxis(1);
 
         for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);
-        
-
-        //this.createTimeSeries(0);
-        //this.createTimeSeries(1);
-
     },
     methods: {
         /**
@@ -264,30 +260,25 @@ export default {
             return drawingQueue;
         },
         /**
-         * Create y0 or y1 axis and draw its time series.
+         * Create a time series from its name.
          * 
-         * @param {0|1} axis Represents either the y0 or y1 axis.
+         * @param {String} name The name of the time series.
          */
         createTimeSeries: function (name) {
             const Y = this.getDataByScale(0);
             const Y1 = this.getDataByScale(1);
             let timeSeries = Y.concat(Y1).find(d => d.name === name);
-            //const Y = this.getDataByScale(axis);
             if (timeSeries === undefined) return;
-            //this.createYScale(Y, axis);
-            //this.drawYAxis(axis);
+            // Refactor this?
             if (timeSeries["isBar"] === true) this.drawBars(timeSeries);
             if (timeSeries["isBar"] === false) this.drawLine(timeSeries);
             if (timeSeries["criticalValues"]) this.drawCriticalValues(timeSeries);
-            /*for (var i = 0; i < Y.length; i++) {
-                if (Y[i]["isBar"] === false) {
-                    this.drawLine(Y[i]);
-                } else {
-                    this.drawBars(Y[i]);
-                }
-                if (Y[i]['criticalValues']) this.drawCriticalValues(Y[i]);
-            }*/
         },
+        /**
+         * Draw the bars for a time series represented as a bar graph.
+         * 
+         * @param {Object} series The time series.
+         */
         drawBars: function (series) {
             var barWidth = this.calculateBarWidth(series);
             let self = this;
@@ -386,11 +377,10 @@ export default {
             // Get min of min of each time series, and same for max.
             min = d3.min(searchArg, function (d) { return d3.min(d, function (d) { return parse(d.datetime) }); });
             max = d3.max(searchArg, function (d) { return d3.max(d, function (d) { return parse(d.datetime) }); });
-            console.log(Y0TimeSeries)
+
             if (this.timeSeriesHasBarGraph(Y0TimeSeries) || this.timeSeriesHasBarGraph(Y1TimeSeries)) {
-                max.setHours(max.getHours() + (24*15));
+                max.setHours(max.getHours() + (24*15)); // TODO: get the specific time to extend this by.
             }
-            console.log(max);
             this.xScale = d3.scaleTime()
               .range([0, self.adjustedWidth])
               .domain([min, max]);
@@ -519,6 +509,9 @@ export default {
             this.focusedimeSeries = data;
             this.drawReferenceRange(data);
         },
+        /**
+         * Check if 
+         */
         timeSeriesHasBarGraph(timeSeries) {
             return timeSeries.filter((d) => {
                 return d.isBar === true;
