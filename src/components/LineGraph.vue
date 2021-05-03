@@ -71,36 +71,36 @@ export default {
                     isBar: true,
                     name: 'Test Data 2',
                     referenceRange: [40, 140],
-                    timespanValue: 720,
+                    timespanValue: 360,
                     timespanUnits: 'h', // for hours
                     yAxis: 1,
                     measurements: [
                         {
-                            datetime: '2015-01-02',
+                            datetime: '2015-01-01',
                             value: 60
                         },
                         {
-                            datetime: '2015-02-02',
+                            datetime: '2015-02-01',
                             value: 120
                         },
                         {
-                            datetime: '2015-03-02',
+                            datetime: '2015-03-01',
                             value: 170
                         },
                         {
-                            datetime: '2015-04-02',
+                            datetime: '2015-04-01',
                             value: 160
                         },
                         {
-                            datetime: '2015-05-02',
+                            datetime: '2015-05-01',
                             value: 150
                         },
                         {
-                            datetime: '2015-06-02',
+                            datetime: '2015-06-01',
                             value: 140
                         },
                         {
-                            datetime: '2015-07-02',
+                            datetime: '2015-07-01',
                             value: 100
                         }
                     ]
@@ -219,9 +219,9 @@ export default {
         /**
          * Returns the width of a single bar in a chart.
          */
-        calculateBarWidth: function () {
+        calculateBarWidth: function (series) {
             const DTStop = new Date(this.minDatetime);
-            DTStop.setHours(DTStop.getHours() + (24*15));
+            DTStop.setHours(DTStop.getHours() + (series.timespanValue));
             return this.xScale(DTStop);
         },
         /**
@@ -251,24 +251,23 @@ export default {
             }
         },
         drawBars: function (series) {
-            var barWidth = this.calculateBarWidth();
-            console.log(barWidth)
+            var barWidth = this.calculateBarWidth(series);
             let self = this;
             let yScale = this.getYScale(series.yAxis);
             var parse = d3.timeParse(this.datetimeFormat);
-            console.log(series.measurements)
             this.chart.selectAll(".bar")
                 .data(series.measurements)
                 .enter()
                 .append("rect")
                     .attr("class", "bar")
                     .attr("fill", function () { return series.color; })
+                    .attr("fill-opacity", "10%")
                     .attr("x", function(d) { return self.xScale(parse(d.datetime)); })
                     .attr("y", function(d) { return yScale(d.value); })
                     .attr("width", barWidth)
                     .attr("height", function(d) { 
-                        return self.adjustedHeight - yScale(d.value); });
-
+                        return self.adjustedHeight - yScale(d.value); 
+                    });
         },
         /**
          * Create the y0 or y1 axis in D3, depending on which number we pass as parameter.
@@ -349,6 +348,11 @@ export default {
             // Get min of min of each time series, and same for max.
             min = d3.min(searchArg, function (d) { return d3.min(d, function (d) { return parse(d.datetime) }); });
             max = d3.max(searchArg, function (d) { return d3.max(d, function (d) { return parse(d.datetime) }); });
+            console.log(Y0TimeSeries)
+            if (this.timeSeriesHasBarGraph(Y0TimeSeries) || this.timeSeriesHasBarGraph(Y1TimeSeries)) {
+                max.setHours(max.getHours() + (24*15));
+            }
+            console.log(max);
             this.xScale = d3.scaleTime()
               .range([0, self.adjustedWidth])
               .domain([min, max]);
@@ -476,6 +480,11 @@ export default {
         setFocusedSeries: function (data) {
             this.focusedimeSeries = data;
             this.drawReferenceRange(data);
+        },
+        timeSeriesHasBarGraph(timeSeries) {
+            return timeSeries.filter((d) => {
+                return d.isBar === true;
+            }).length > 0;
         },
         /**
          * Convert string to format compatible as an HTML id or class.
