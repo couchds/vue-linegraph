@@ -22,6 +22,7 @@ export default {
             type: Array,
             default: () => {
                 return [{
+                    active: true,
                     animateDraw: true,
                     animateDrawDuration: 1000,
                     color: 'steelblue',
@@ -62,6 +63,7 @@ export default {
                     ]
                 },
                 {
+                    active: false,
                     animateDraw: false,
                     animateDrawDuration: null,
                     color: 'red',
@@ -174,10 +176,10 @@ export default {
              * The time series that the visualization is currently
              * focusing on.
             */
-            activeTimeSeries: null,
+            focusedTimeSeries: null,
             chart: null,
             chartHeader: null,
-            graphTitleId: this.graphTitle.replaceAll(' ', '-'),
+            graphTitleId: this.htmlCompatible(this.graphTitle),
             svg: null,
             xScale: null,
             y0Scale: null,
@@ -185,7 +187,7 @@ export default {
         }
     },
     mounted: function () {
-        this.graphTitleId = this.graphTitle.replaceAll(' ', '-');
+        this.graphTitleId = this.htmlCompatible(this.graphTitle);
         this.createSVG();
         this.createChart();
         this.createXScale();
@@ -193,6 +195,8 @@ export default {
 
         this.createTimeSeries(0);
         this.createTimeSeries(1);
+
+        this.setActive('Test Data 2', false); // testing 
 
     },
     methods: {
@@ -344,7 +348,7 @@ export default {
               .on("click", function () {
                   self.setActiveSeries(data);
               })
-              .attr("class", "line-graph")
+              .attr("class", "line-graph " + data.name)
               .attr("stroke", data.color)
               .attr("stroke-linejoin", "round")
               .attr("stroke-linecap", "round")
@@ -368,7 +372,7 @@ export default {
                 .data(rectData)
                 .enter()
                 .append('rect')
-                .attr("id", "reference-range-"+this.activeTimeSeries)
+                .attr("id", "reference-range-"+this.focusedTimeSeries)
                 .attr("class", "reference-range")
                 .attr("x", d=> d.x1)
                 .attr("y", d=> d.y1)
@@ -423,12 +427,30 @@ export default {
             }[seriesNumber];
         },
         /**
+         * For a given time series, set if it is active or not; i.e. if
+         * it is shown to the user or not.
+         */
+        setActive: function (seriesName, value) {
+            let selectedTimeSeries = this.timeSeriesData.filter((d) => {
+                return d.name === seriesName
+            })[0];
+            selectedTimeSeries.active = value;
+        },
+        /**
          * Set a time series that we are focusing on within the visualization.
          * This will highlight this specific series.
          */
-        setActiveSeries: function (data) {
-            this.activeTimeSeries = data;
+        setFocusedSeries: function (data) {
+            this.focusedimeSeries = data;
             this.drawReferenceRange(data);
+        },
+        /**
+         * Convert string to format compatible as an HTML id or class.
+         * 
+         * @param {String} string The string we want to convert. 
+         */
+        htmlCompatible: function (string) {
+            return string.replace(/(^-\d-|^\d|^-\d|^--)/,'a$1').replace(/[\W]/g, '-');
         }
     }
 }
