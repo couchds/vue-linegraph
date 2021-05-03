@@ -100,7 +100,7 @@ export default {
                             value: 140
                         },
                         {
-                            datetime: '2015-07-105',
+                            datetime: '2015-07-10',
                             value: 100
                         }
                     ]
@@ -252,7 +252,9 @@ export default {
             }
         },
         drawBars: function (series) {
+            console.log(series);
             var barWidth = this.calculateBarWidth();
+            console.log(barWidth);
             //this.chart.selectAll(".bar")
             //    .data()
 
@@ -406,10 +408,8 @@ export default {
          */
         drawCriticalValues: function (series) {
             let yScale = this.getYScale(series.yAxis);
-            let yVal1 = yScale(series.criticalValues[0]);
-            let yVal2 = yScale(series.criticalValues[1]);
             let criticalValues = series.measurements.filter((d) => {
-                    return d.value <= yVal1 || d.value <= yVal2;
+                    return (d.value <= series.criticalValues[0]) || (d.value >= series.criticalValues[1]);
             });
             var parse = d3.timeParse(this.datetimeFormat);
             this.chart.selectAll("circle")
