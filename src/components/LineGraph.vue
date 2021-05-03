@@ -195,8 +195,23 @@ export default {
         this.createChart();
         this.createXScale();
         this.drawXAxis();
-        this.createTimeSeries(0);
-        this.createTimeSeries(1);
+
+        
+        const drawingQueue = this.createDrawingQueue();
+        console.log(drawingQueue);
+        let Y = this.getDataByScale(0);
+        this.createYScale(Y, 0);
+        this.drawYAxis(0);
+
+        let Y1 = this.getDataByScale(1);
+        this.createYScale(Y1, 1);
+        this.drawYAxis(1);
+
+        for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);
+        
+
+        //this.createTimeSeries(0);
+        //this.createTimeSeries(1);
 
     },
     methods: {
@@ -232,23 +247,46 @@ export default {
             this.chart.append("g").attr("id", "reference-ranges")
         },
         /**
+         * Create queue which has the order that time series should be drawn.
+         * This ensures that bars are drawn before lines, so that lines appear
+         * on top of the bars.
+         */
+        createDrawingQueue: function () {
+            let drawingQueue = [];
+            const Y = this.getDataByScale(0);
+            const Y1 = this.getDataByScale(1);
+            for (var i = 0; i < Y.concat(Y1).length; i++) {
+                if (Y.concat(Y1)[i]["isBar"] === true) drawingQueue.push(Y.concat(Y1)[i]["name"]);
+            }
+            for (i = 0; i < Y.concat(Y1).length; i++) {
+                if (Y.concat(Y1)[i]["isBar"] === false) drawingQueue.push(Y.concat(Y1)[i]["name"]);
+            }
+            return drawingQueue;
+        },
+        /**
          * Create y0 or y1 axis and draw its time series.
          * 
          * @param {0|1} axis Represents either the y0 or y1 axis.
          */
-        createTimeSeries: function (axis) {
-            const Y = this.getDataByScale(axis);
-            if (!Y) return;
-            this.createYScale(Y, axis);
-            this.drawYAxis(axis);
-            for (var i = 0; i < Y.length; i++) {
+        createTimeSeries: function (name) {
+            const Y = this.getDataByScale(0);
+            const Y1 = this.getDataByScale(1);
+            let timeSeries = Y.concat(Y1).find(d => d.name === name);
+            //const Y = this.getDataByScale(axis);
+            if (timeSeries === undefined) return;
+            //this.createYScale(Y, axis);
+            //this.drawYAxis(axis);
+            if (timeSeries["isBar"] === true) this.drawBars(timeSeries);
+            if (timeSeries["isBar"] === false) this.drawLine(timeSeries);
+            if (timeSeries["criticalValues"]) this.drawCriticalValues(timeSeries);
+            /*for (var i = 0; i < Y.length; i++) {
                 if (Y[i]["isBar"] === false) {
                     this.drawLine(Y[i]);
                 } else {
                     this.drawBars(Y[i]);
                 }
                 if (Y[i]['criticalValues']) this.drawCriticalValues(Y[i]);
-            }
+            }*/
         },
         drawBars: function (series) {
             var barWidth = this.calculateBarWidth(series);
@@ -261,7 +299,7 @@ export default {
                 .append("rect")
                     .attr("class", "bar")
                     .attr("fill", function () { return series.color; })
-                    .attr("fill-opacity", "10%")
+                    .attr("fill-opacity", "30%")
                     .attr("x", function(d) { return self.xScale(parse(d.datetime)); })
                     .attr("y", function(d) { return yScale(d.value); })
                     .attr("width", barWidth)
