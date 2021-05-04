@@ -1,15 +1,33 @@
 <template>
-    <div class="line-graph-container" :id="graphTitleId">
-        <h1>{{ graphTitle }}</h1>
+    <div class="vue-line-graph">
+        <div class="graph-header">
+            <div class="graph-header-item line-graph-btns" v-if="showOptions">
+                <button>Customize</button>
+            </div>
+            <div class="graph-header-item">
+                <h1>{{ graphTitle }}</h1>
+            </div>
+            <div class="graph-header-item">
+                <GraphLegend :legendId="'legend-'+graphTitleId"
+                    :legendMap="legendMap"
+                />
+            </div>
+        </div>
+        <div class="line-graph-container" :id="graphTitleId">
+        </div>
     </div>
 </template>
 
 <script>
 
 import * as d3 from "d3";
+import GraphLegend from './GraphLegend.vue'
 
 export default {
     name: 'LineGraph',
+    components: {
+        GraphLegend
+    },
     /**
      * Props are immutable within the component itself,
      * they're set by the parent component.
@@ -159,6 +177,13 @@ export default {
             type: Number,
             default: 60
         },
+        /**
+         * Should we give the user options to customize visualization?
+         */
+        showOptions: {
+            type: Boolean,
+            default: true
+        },
         strokeWidth: {
             type: Number,
             default: 1.5
@@ -178,12 +203,24 @@ export default {
              * The time series that the visualization is currently
              * focusing on.
             */
+            criticalValues: null,
             focusedTimeSeries: null,
             chart: null,
             chartHeader: null,
+            clipPathId: null,
+            clipPath: null,
+            defs: null,
             graphTitleId: this.htmlCompatible(this.graphTitle),
+            legendMap: null,
             minDatetime: null, // this will be used to calculate bar width.
+            seriesPaths: {},
             svg: null,
+            xAxis: null,
+            xAxisGroup: null,
+            y0Axis: null,
+            y1Axis: null,
+            y0AxisGroup: null,
+            y1AxisGroup: null,
             xScale: null,
             y0Scale: null,
             y1Scale: null
@@ -191,6 +228,7 @@ export default {
     },
     mounted: function () {
         this.graphTitleId = this.htmlCompatible(this.graphTitle);
+        this.createLegendMap();
         this.createSVG();
         this.createChart();
         this.createXScale();
@@ -200,14 +238,16 @@ export default {
         const drawingQueue = this.createDrawingQueue();
 
         // refactor
-        let Y = this.getDataByScale(0);
-        this.createYScale(Y, 0);
-        this.drawYAxis(0);
-
+        let Y0 = this.getDataByScale(0);
+        if (Y0.length > 0) {
+            this.createYScale(Y0, 0);
+            this.drawYAxis(0);
+        }
         let Y1 = this.getDataByScale(1);
-        this.createYScale(Y1, 1);
-        this.drawYAxis(1);
-
+        if (Y1.length > 0) {
+            this.createYScale(Y1, 1);
+            this.drawYAxis(1);
+        }
         for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);
     },
     methods: {
@@ -239,8 +279,37 @@ export default {
          * Create the g element for the chart that we will contain the visualization.
          */
         createChart: function () {
+            let self = this;
+            //this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
+            // Add a clipPath: everything out of this area won't be drawn.
+    
+            this.defs = this.svg.append("defs");
+            this.clipPathId = 'clip-' + this.graphTitleId;
+            this.clipPath = this.defs.append("clipPath")
+                .attr("id", this.clipPathId)
+                .append("rect")
+                .attr("x", "0")
+                .attr("y", "0")
+                .attr("width", this.adjustedWidth )
+                .attr("height", this.adjustedHeight );
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
-            this.chart.append("g").attr("id", "reference-ranges")
+            this.clippedChart = this.chart.append("g").attr("clip-path", "url(#"+this.clipPathId+")");
+            this.chartVisuals = this.clippedChart.append("g");
+            this.referenceRanges = this.chartVisuals.append("g").attr("id", "reference-ranges");
+            this.svg.call(d3.zoom()
+                .scaleExtent([0.9, 3])
+                .on("zoom", self.updateChart));
+        },
+        updateChart: function (event) {
+            let self = this;
+            this.chartVisuals.attr("transform", event.transform);
+            this.xAxisGroup.call(self.xAxis.scale(event.transform.rescaleX(self.xScale)));
+            if (this.y0AxisGroup) {
+                this.y0AxisGroup.call(self.y0Axis.scale(event.transform.rescaleY(self.y0Scale)));
+            }
+            if (this.y1AxisGroup) {
+                this.y1AxisGroup.call(self.y1Axis.scale(event.transform.rescaleY(self.y1Scale)));
+            }
         },
         /**
          * Create queue which has the order that time series should be drawn.
@@ -258,6 +327,22 @@ export default {
                 if (Y.concat(Y1)[i]["isBar"] === false) drawingQueue.push(Y.concat(Y1)[i]["name"]);
             }
             return drawingQueue;
+        },
+        /**
+         * Create a map from time series name to its color, which is used
+         * in the Legend component.
+         */
+        createLegendMap: function () {
+            let newLegendMap = {};
+            const Y = this.getDataByScale(0);
+            const Y1 = this.getDataByScale(1);
+            let activeTimeSeries = Y.concat(Y1).filter((d) => {
+                return d.active === true;
+            })
+            for (var i = 0; i < activeTimeSeries.length; i++) {
+                newLegendMap[activeTimeSeries[i]["name"]] = activeTimeSeries[i]["color"];
+            }
+            this.$set(this, 'legendMap', newLegendMap);
         },
         /**
          * Create a time series from its name.
@@ -284,7 +369,7 @@ export default {
             let self = this;
             let yScale = this.getYScale(series.yAxis);
             var parse = d3.timeParse(this.datetimeFormat);
-            this.chart.selectAll(".bar")
+            this.chartVisuals.selectAll(".bar")
                 .data(series.measurements)
                 .enter()
                 .append("rect")
@@ -304,12 +389,15 @@ export default {
          * @param {0|1} axis Represents either the y0 or y1 axis.
          */
         drawYAxis: function (axis) {
-            let timeSeries = this.getDataByScale(axis);
+            //var timeSeries = this.getDataByScale(axis);
+            let timeSeries = this.timeSeriesData.filter((d) => {
+                return d.yAxis === axis;
+            });
             // Use the D3 axis function that corresponds to y0 (left) or y1 (right) axis.
-            let axisFn = {
+            /*let axisFn = {
                 0: d3.axisLeft,
                 1: d3.axisRight
-            }[axis];
+            }[axis];*/
             // Horizontally translate by 0 if we are using the y0 axis and translate by
             // the adjusted width if we are using the y1 axis.
             let xCoord = {
@@ -317,18 +405,30 @@ export default {
                 1: this.adjustedWidth
             }[axis];
             let yScale = this.getYScale(axis);
-            // Pass our y scaling function to the D3 axis function to draw the y axis.
-            this.chart
-                .append("g")
-                .attr("class", "y-axis")
-                .attr("color", function(){
-                    return timeSeries[0]["color"];
-                })
-                .attr("font-size", "20px")
-                .attr("transform", `translate(${xCoord}, 0)`)
-                .call(axisFn(yScale)
-                    .tickFormat(d3.format("~s")) // Translates for instance, 100000 -> 100K
-                )
+            if (axis === 0) {
+                this.y0Axis = d3.axisLeft(yScale).tickFormat(d3.format("~s"));
+                this.y0AxisGroup = this.chart
+                    .append("g")
+                    .attr("class", "y-axis")
+                    .attr("color", function(){
+                        return timeSeries[0]["color"];
+                    })
+                    .attr("font-size", "20px")
+                    .attr("transform", `translate(${xCoord}, 0)`)
+                    .call(this.y0Axis);
+            }
+            if (axis === 1) {
+                this.y1Axis = d3.axisRight(yScale).tickFormat(d3.format("~s"));
+                this.y1AxisGroup = this.chart
+                    .append("g")
+                    .attr("class", "y-axis")
+                    .attr("color", function(){
+                        return timeSeries[0]["color"];
+                    })
+                    .attr("font-size", "20px")
+                    .attr("transform", `translate(${xCoord}, 0)`)
+                    .call(this.y1Axis)
+            }
         },
         /**
          * Create scale for first Y axis, on the left-hand side of the graph.
@@ -350,11 +450,14 @@ export default {
             }
         },
         drawXAxis: function () {
-            this.chart
+            this.xAxis = d3.axisBottom(this.xScale).ticks(10);
+            this.xAxisGroup = this.chart
               .append("g")
               .attr("class", "x-axis")
               .attr("transform", `translate(0,${this.adjustedHeight})`)
-              .call(d3.axisBottom(this.xScale).ticks(10));
+              .call(this.xAxis);
+            //this.xAxisGroup
+            //  .call(d3.axisBottom(this.xScale).ticks(10));
         },
         /** 
          * Create X scale that maps datetime to coordinate.
@@ -404,7 +507,7 @@ export default {
               //.x(dataPoint => self.xScale(dataPoint.datetime))
               .x(dataPoint => self.xScale(parse(dataPoint.datetime)))
               .y(dataPoint => yScale(dataPoint.value));
-            const path = this.chart.append("path")
+            this.seriesPaths[data.name] = this.chartVisuals.append("path")
               .datum(data.measurements)
               .style("fill", "none")
               .on("click", function () {
@@ -415,8 +518,9 @@ export default {
               .attr("stroke-linejoin", "round")
               .attr("stroke-linecap", "round")
               .attr("stroke-width", this.strokeWidth)
+              .attr("cursor", "pointer")
               .attr("d", line);
-            if (data.animateDraw) this.animatePathDraw(path, data);
+            if (data.animateDraw) this.animatePathDraw(this.seriesPaths[data.name], data);
         },
         /**
          * Draw a reference range in D3 using rectangle.
@@ -425,7 +529,7 @@ export default {
          * creating the reference range for.
          */
         drawReferenceRange: function (series) {
-            d3.select(".reference-range").remove(); // remove existing reference range.
+            d3.select(".reference-range-"+this.graphTitleId).remove(); // remove existing reference range.
             let yScale = this.getYScale(series.yAxis);
             let yVal1 = yScale(series.referenceRange[0]);
             let yVal2 = yScale(series.referenceRange[1]);
@@ -435,7 +539,7 @@ export default {
                 .enter()
                 .append('rect')
                 .attr("id", "reference-range-"+this.focusedTimeSeries)
-                .attr("class", "reference-range")
+                .attr("class", "reference-range-"+this.graphTitleId)
                 .attr("x", d=> d.x1)
                 .attr("y", d=> d.y1)
                 .attr("width", d=> d.x2 - d.x1)
@@ -455,11 +559,11 @@ export default {
                     return (d.value <= series.criticalValues[0]) || (d.value >= series.criticalValues[1]);
             });
             var parse = d3.timeParse(this.datetimeFormat);
-            this.chart.selectAll("circle")
+            this.criticalValues = this.chartVisuals.selectAll("circle")
                 .data(criticalValues)
                 .enter()
                 .append("circle")
-                .attr("class", "critical-value " + this.htmlCompatible(series.name))
+                .attr("class", "critical-value-"+this.graphTitleId)
                 .attr("fill", series.color)
                 .attr("stroke", series.color)
                 .attr("r", 5)
@@ -531,4 +635,30 @@ export default {
 </script>
 
 <style scoped>
+.graph-header {
+    align-content: center;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-evenly;
+}
+.graph-header > .graph-header-item {
+  flex: 0 0 5%;
+  width: 100%;
+}
+
+.vue-line-graph {
+    width: 100%;
+}
+
+
+.line-graph-btns > button  {
+  background-color: steelblue;
+  border: 2px solid;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  font-size: 1.2em;
+}
+
 </style>
