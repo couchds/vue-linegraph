@@ -231,6 +231,7 @@ export default {
         this.createLegendMap();
         this.createSVG();
         this.createChart();
+        this.drawCoordinateAxes();
         this.createXScale();
         this.drawXAxis();
 
@@ -294,11 +295,24 @@ export default {
                 .attr("height", this.adjustedHeight );
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
             this.clippedChart = this.chart.append("g").attr("clip-path", "url(#"+this.clipPathId+")");
-            this.chartVisuals = this.clippedChart.append("g");
+            this.chartVisuals = this.clippedChart.append("g").attr("class", "chart-visuals");
             this.referenceRanges = this.chartVisuals.append("g").attr("id", "reference-ranges");
             this.svg.call(d3.zoom()
                 .scaleExtent([0.9, 3])
                 .on("zoom", self.updateChart));
+        },
+        /**
+         * Draws the x and y coordinate axes.
+         */
+        drawCoordinateAxes: function () {
+            this.chartVisuals.append("g")
+                .attr("class", "x-coordinate")
+                .append("line")
+                .attr("x1", -10000)
+                .attr("x2", 10000)
+                .attr("y1", this.adjustedHeight)
+                .attr("y2", this.adjustedHeight)
+                .attr("stroke", "black");
         },
         updateChart: function (event) {
             let self = this;
@@ -533,7 +547,7 @@ export default {
             let yScale = this.getYScale(series.yAxis);
             let yVal1 = yScale(series.referenceRange[0]);
             let yVal2 = yScale(series.referenceRange[1]);
-            var rectData = [{x1: 0, x2: this.adjustedWidth, y1: yVal2, y2: yVal1}];
+            var rectData = [{x1: -10000, x2: 10000, y1: yVal2, y2: yVal1}];
             this.chart.select('#reference-ranges').selectAll('foo')
                 .data(rectData)
                 .enter()
