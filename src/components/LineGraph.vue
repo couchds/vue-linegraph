@@ -271,7 +271,7 @@ export default {
             this.clippedChart = this.chart.append("g").attr("clip-path", "url(#"+this.clipPathId+")");
             this.chartVisuals = this.clippedChart.append("g");
             this.referenceRanges = this.chartVisuals.append("g").attr("id", "reference-ranges");
-            this.chart.call(d3.zoom()
+            this.svg.call(d3.zoom()
                 .extent([[0, 0], [this.adjustedWidth, this.adjustedHeight]])
                 .on("zoom", self.updateChart));
         },
