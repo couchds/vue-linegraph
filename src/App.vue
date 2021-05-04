@@ -101,6 +101,7 @@ export default {
                   animateDraw: true,
                   animateDrawDuration: 1000,
                   color: 'steelblue',
+                  isBar: false,
                   name: 'Graph ' + index,
                   yAxis: 0,
                   measurements: this.generateRandomTimeSeries(numDataPts)
@@ -114,7 +115,8 @@ export default {
                   animateDraw: true,
                   animateDrawDuration: 1000,
                   color: 'orange',
-                  name: 'Graph ' + index,
+                  isBar: false,
+                  name: 'Graph ' + index + 100,
                   yAxis: randomYAxis,
                   measurements: this.generateRandomTimeSeries(numDataPts)
               }
@@ -137,8 +139,7 @@ export default {
           for (var i = 0; i < this.numVisuals; i++) {
               newProjectData.push(this.generateRandomVisual(20, i));
           }
-          this.$set(this, 'projectData', newProjectData); 
-          console.log(this.projectData);
+          this.$set(this, 'projectData', newProjectData);
       },
       /**
        * Set the app data's number of visuals to match the

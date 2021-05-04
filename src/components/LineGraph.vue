@@ -218,6 +218,7 @@ export default {
             this.createYScale(Y1, 1);
             this.drawYAxis(1);
         }
+        console.log(drawingQueue);
 
         for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);
     },
@@ -252,17 +253,28 @@ export default {
         createChart: function () {
             let self = this;
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
-            this.chart.append("g").attr("id", "reference-ranges")
+            this.chartVisuals = this.chart.append("g");
+            this.referenceRanges = this.chartVisuals.append("g").attr("id", "reference-ranges");
+            //this.referenceRanges = this.chart.append("g").attr("id", "reference-ranges");
             this.chart.call(d3.zoom()
                 .extent([[0, 0], [this.adjustedWidth, this.adjustedHeight]])
                 .on("zoom", self.updateChart));
         },
         updateChart: function (event) {
+            console.log(event);
+
             let self = this;
-           // this.chart.attr("transform", event.transform);
+            this.chartVisuals.attr("transform", event.transform);
+            this.xAxisGroup.call(self.xAxis.scale(event.transform.rescaleX(self.xScale)));
+            if (this.y0AxisGroup) {
+                this.y0AxisGroup.call(self.y0Axis.scale(event.transform.rescaleY(self.y0Scale)));
+            }
+            if (this.y1AxisGroup) {
+                this.y1AxisGroup.call(self.y1Axis.scale(event.transform.rescaleY(self.y1Scale)));
+            }
             //this.chart.attr("transform", event.transform);
-            d3.select(".reference-range-"+this.graphTitleId).attr("transform", event.transform);
-            for (const property in this.seriesPaths) {
+            //d3.select(".reference-range-"+this.graphTitleId).attr("transform", event.transform);
+            /*for (const property in this.seriesPaths) {
                 this.seriesPaths[property].attr("transform", event.transform);
             }
             this.xAxisGroup.call(self.xAxis.scale(event.transform.rescaleX(self.xScale)));
@@ -275,7 +287,7 @@ export default {
             this.criticalValues
                 .selectAll("circle")
                 .attr('cx', function(d) {return self.xScale(d.datetime)})
-                .attr('cy', function(d) {return self.y0Scale(d.value)});
+                .attr('cy', function(d) {return self.y0Scale(d.value)});*/
             //this.xScale = d3.event.transform.rescaleX(this.xScale);
             //this.xAxis.call(d3.axisBottom(this.xScale));
             //this.y0Axis.call(d3.axisLeft(newY));
@@ -327,7 +339,7 @@ export default {
             let self = this;
             let yScale = this.getYScale(series.yAxis);
             var parse = d3.timeParse(this.datetimeFormat);
-            this.chart.selectAll(".bar")
+            this.chartVisuals.selectAll(".bar")
                 .data(series.measurements)
                 .enter()
                 .append("rect")
@@ -477,7 +489,7 @@ export default {
               //.x(dataPoint => self.xScale(dataPoint.datetime))
               .x(dataPoint => self.xScale(parse(dataPoint.datetime)))
               .y(dataPoint => yScale(dataPoint.value));
-            this.seriesPaths[data.name] = this.chart.append("path")
+            this.seriesPaths[data.name] = this.chartVisuals.append("path")
               .datum(data.measurements)
               .style("fill", "none")
               .on("click", function () {
@@ -528,7 +540,7 @@ export default {
                     return (d.value <= series.criticalValues[0]) || (d.value >= series.criticalValues[1]);
             });
             var parse = d3.timeParse(this.datetimeFormat);
-            this.criticalValues = this.chart.selectAll("circle")
+            this.criticalValues = this.chartVisuals.selectAll("circle")
                 .data(criticalValues)
                 .enter()
                 .append("circle")
