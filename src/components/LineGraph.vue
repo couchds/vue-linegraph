@@ -577,7 +577,7 @@ export default {
          * @param {0|1} axis Represents either y0 or y1 axis.
          */
         getDataByScale: function (axis) {
-            return result = this.timeSeriesData.filter((d) => {
+            return this.timeSeriesData.filter((d) => {
                 return d.yAxis === axis;
             });
         },
