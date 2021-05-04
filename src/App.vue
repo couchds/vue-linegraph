@@ -98,6 +98,7 @@ export default {
       generateRandomVisual: function (numDataPts, index) {
           var data =  [
               {
+                  active: true,
                   animateDraw: true,
                   animateDrawDuration: 1000,
                   color: 'steelblue',
@@ -112,6 +113,7 @@ export default {
               if (Math.random() < 0.5) randomYAxis = 1;
               data.push(
                 {
+                  active: true,
                   animateDraw: true,
                   animateDrawDuration: 1000,
                   color: 'orange',

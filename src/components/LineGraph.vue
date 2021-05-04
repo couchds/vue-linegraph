@@ -7,7 +7,11 @@
             <div class="graph-header-item">
                 <h1>{{ graphTitle }}</h1>
             </div>
-            <div></div>
+            <div class="graph-header-item">
+                <GraphLegend :legendId="'legend-'+graphTitleId"
+                    :legendMap="legendMap"
+                />
+            </div>
         </div>
         <div class="line-graph-container" :id="graphTitleId">
         </div>
@@ -17,9 +21,13 @@
 <script>
 
 import * as d3 from "d3";
+import GraphLegend from './GraphLegend.vue'
 
 export default {
     name: 'LineGraph',
+    components: {
+        GraphLegend
+    },
     /**
      * Props are immutable within the component itself,
      * they're set by the parent component.
@@ -203,6 +211,7 @@ export default {
             clipPath: null,
             defs: null,
             graphTitleId: this.htmlCompatible(this.graphTitle),
+            legendMap: null,
             minDatetime: null, // this will be used to calculate bar width.
             seriesPaths: {},
             svg: null,
@@ -218,7 +227,9 @@ export default {
         }
     },
     mounted: function () {
+        console.log('mounted!');
         this.graphTitleId = this.htmlCompatible(this.graphTitle);
+        this.createLegendMap();
         this.createSVG();
         this.createChart();
         this.createXScale();
@@ -301,8 +312,7 @@ export default {
             }
             if (this.y1AxisGroup) {
                 this.y1AxisGroup.call(self.y1Axis.scale(event.transform.rescaleY(self.y1Scale)));
-            
-            this.clipPath.select("rect").attr("height", )}
+            }
         },
         /**
          * Create queue which has the order that time series should be drawn.
@@ -320,6 +330,22 @@ export default {
                 if (Y.concat(Y1)[i]["isBar"] === false) drawingQueue.push(Y.concat(Y1)[i]["name"]);
             }
             return drawingQueue;
+        },
+        /**
+         * Create a map from time series name to its color, which is used
+         * in the Legend component.
+         */
+        createLegendMap: function () {
+            let newLegendMap = {};
+            const Y = this.getDataByScale(0);
+            const Y1 = this.getDataByScale(1);
+            let activeTimeSeries = Y.concat(Y1).filter((d) => {
+                return d.active === true;
+            })
+            for (var i = 0; i < activeTimeSeries.length; i++) {
+                newLegendMap[activeTimeSeries[i]["name"]] = activeTimeSeries[i]["color"];
+            }
+            this.$set(this, 'legendMap', newLegendMap);
         },
         /**
          * Create a time series from its name.
@@ -623,6 +649,7 @@ export default {
 }
 .graph-header > .graph-header-item {
   flex: 0 0 5%;
+  width: 100%;
 }
 
 .vue-line-graph {
