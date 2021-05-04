@@ -272,7 +272,7 @@ export default {
             this.chartVisuals = this.clippedChart.append("g");
             this.referenceRanges = this.chartVisuals.append("g").attr("id", "reference-ranges");
             this.svg.call(d3.zoom()
-                .extent([[0, 0], [this.adjustedWidth, this.adjustedHeight]])
+                .scaleExtent([0.9, 3])
                 .on("zoom", self.updateChart));
         },
         updateChart: function (event) {
@@ -478,6 +478,7 @@ export default {
               .attr("stroke-linejoin", "round")
               .attr("stroke-linecap", "round")
               .attr("stroke-width", this.strokeWidth)
+              .attr("cursor", "pointer")
               .attr("d", line);
             if (data.animateDraw) this.animatePathDraw(this.seriesPaths[data.name], data);
         },
