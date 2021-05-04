@@ -178,12 +178,20 @@ export default {
              * The time series that the visualization is currently
              * focusing on.
             */
+            criticalValues: null,
             focusedTimeSeries: null,
             chart: null,
             chartHeader: null,
             graphTitleId: this.htmlCompatible(this.graphTitle),
             minDatetime: null, // this will be used to calculate bar width.
+            seriesPaths: {},
             svg: null,
+            xAxis: null,
+            xAxisGroup: null,
+            y0Axis: null,
+            y1Axis: null,
+            y0AxisGroup: null,
+            y1AxisGroup: null,
             xScale: null,
             y0Scale: null,
             y1Scale: null
@@ -200,13 +208,16 @@ export default {
         const drawingQueue = this.createDrawingQueue();
 
         // refactor
-        let Y = this.getDataByScale(0);
-        this.createYScale(Y, 0);
-        this.drawYAxis(0);
-
+        let Y0 = this.getDataByScale(0);
+        if (Y0.length > 0) {
+            this.createYScale(Y0, 0);
+            this.drawYAxis(0);
+        }
         let Y1 = this.getDataByScale(1);
-        this.createYScale(Y1, 1);
-        this.drawYAxis(1);
+        if (Y1.length > 0) {
+            this.createYScale(Y1, 1);
+            this.drawYAxis(1);
+        }
 
         for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);
     },
@@ -239,8 +250,40 @@ export default {
          * Create the g element for the chart that we will contain the visualization.
          */
         createChart: function () {
+            let self = this;
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
             this.chart.append("g").attr("id", "reference-ranges")
+            this.chart.call(d3.zoom()
+                .extent([[0, 0], [this.adjustedWidth, this.adjustedHeight]])
+                .on("zoom", self.updateChart));
+        },
+        updateChart: function (event) {
+            let self = this;
+           // this.chart.attr("transform", event.transform);
+            //this.chart.attr("transform", event.transform);
+            d3.select(".reference-range-"+this.graphTitleId).attr("transform", event.transform);
+            for (const property in this.seriesPaths) {
+                this.seriesPaths[property].attr("transform", event.transform);
+            }
+            this.xAxisGroup.call(self.xAxis.scale(event.transform.rescaleX(self.xScale)));
+            if (this.y0AxisGroup) {
+                this.y0AxisGroup.call(self.y0Axis.scale(event.transform.rescaleY(self.y0Scale)));
+            }
+            if (this.y1AxisGroup) {
+                this.y1AxisGroup.call(self.y1Axis.scale(event.transform.rescaleY(self.y1Scale)));
+            }
+            this.criticalValues
+                .selectAll("circle")
+                .attr('cx', function(d) {return self.xScale(d.datetime)})
+                .attr('cy', function(d) {return self.y0Scale(d.value)});
+            //this.xScale = d3.event.transform.rescaleX(this.xScale);
+            //this.xAxis.call(d3.axisBottom(this.xScale));
+            //this.y0Axis.call(d3.axisLeft(newY));
+            //this.createTimeSeries('Test Data');
+//            scatter
+//                .selectAll("circle")
+//                .attr('cx', function(d) {return newX(d.Sepal_Length)})
+//                .attr('cy', function(d) {return newY(d.Petal_Length)});
         },
         /**
          * Create queue which has the order that time series should be drawn.
@@ -304,12 +347,15 @@ export default {
          * @param {0|1} axis Represents either the y0 or y1 axis.
          */
         drawYAxis: function (axis) {
-            let timeSeries = this.getDataByScale(axis);
+            //var timeSeries = this.getDataByScale(axis);
+            let timeSeries = this.timeSeriesData.filter((d) => {
+                return d.yAxis === axis;
+            });
             // Use the D3 axis function that corresponds to y0 (left) or y1 (right) axis.
-            let axisFn = {
+            /*let axisFn = {
                 0: d3.axisLeft,
                 1: d3.axisRight
-            }[axis];
+            }[axis];*/
             // Horizontally translate by 0 if we are using the y0 axis and translate by
             // the adjusted width if we are using the y1 axis.
             let xCoord = {
@@ -317,8 +363,32 @@ export default {
                 1: this.adjustedWidth
             }[axis];
             let yScale = this.getYScale(axis);
+            if (axis === 0) {
+                this.y0Axis = d3.axisLeft(yScale).tickFormat(d3.format("~s"));
+                this.y0AxisGroup = this.chart
+                    .append("g")
+                    .attr("class", "y-axis")
+                    .attr("color", function(){
+                        return timeSeries[0]["color"];
+                    })
+                    .attr("font-size", "20px")
+                    .attr("transform", `translate(${xCoord}, 0)`)
+                    .call(this.y0Axis);
+            }
+            if (axis === 1) {
+                this.y1Axis = d3.axisRight(yScale).tickFormat(d3.format("~s"));
+                this.y1AxisGroup = this.chart
+                    .append("g")
+                    .attr("class", "y-axis")
+                    .attr("color", function(){
+                        return timeSeries[0]["color"];
+                    })
+                    .attr("font-size", "20px")
+                    .attr("transform", `translate(${xCoord}, 0)`)
+                    .call(this.y1Axis)
+            }
             // Pass our y scaling function to the D3 axis function to draw the y axis.
-            this.chart
+            /*this.y0Axis = this.chart
                 .append("g")
                 .attr("class", "y-axis")
                 .attr("color", function(){
@@ -328,7 +398,7 @@ export default {
                 .attr("transform", `translate(${xCoord}, 0)`)
                 .call(axisFn(yScale)
                     .tickFormat(d3.format("~s")) // Translates for instance, 100000 -> 100K
-                )
+                )*/
         },
         /**
          * Create scale for first Y axis, on the left-hand side of the graph.
@@ -350,11 +420,14 @@ export default {
             }
         },
         drawXAxis: function () {
-            this.chart
+            this.xAxis = d3.axisBottom(this.xScale).ticks(10);
+            this.xAxisGroup = this.chart
               .append("g")
               .attr("class", "x-axis")
               .attr("transform", `translate(0,${this.adjustedHeight})`)
-              .call(d3.axisBottom(this.xScale).ticks(10));
+              .call(this.xAxis);
+            //this.xAxisGroup
+            //  .call(d3.axisBottom(this.xScale).ticks(10));
         },
         /** 
          * Create X scale that maps datetime to coordinate.
@@ -404,7 +477,7 @@ export default {
               //.x(dataPoint => self.xScale(dataPoint.datetime))
               .x(dataPoint => self.xScale(parse(dataPoint.datetime)))
               .y(dataPoint => yScale(dataPoint.value));
-            const path = this.chart.append("path")
+            this.seriesPaths[data.name] = this.chart.append("path")
               .datum(data.measurements)
               .style("fill", "none")
               .on("click", function () {
@@ -416,7 +489,7 @@ export default {
               .attr("stroke-linecap", "round")
               .attr("stroke-width", this.strokeWidth)
               .attr("d", line);
-            if (data.animateDraw) this.animatePathDraw(path, data);
+            if (data.animateDraw) this.animatePathDraw(this.seriesPaths[data.name], data);
         },
         /**
          * Draw a reference range in D3 using rectangle.
@@ -455,11 +528,12 @@ export default {
                     return (d.value <= series.criticalValues[0]) || (d.value >= series.criticalValues[1]);
             });
             var parse = d3.timeParse(this.datetimeFormat);
-            this.chart.selectAll("circle")
+            this.criticalValues = this.chart.selectAll("circle")
                 .data(criticalValues)
                 .enter()
                 .append("circle")
-                .attr("class", "critical-value " + this.htmlCompatible(series.name))
+                //.attr("class", "critical-value " + this.htmlCompatible(series.name))
+                .attr("class", "critical-value-"+this.graphTitleId)
                 .attr("fill", series.color)
                 .attr("stroke", series.color)
                 .attr("r", 5)
@@ -473,9 +547,11 @@ export default {
          * @param {0|1} axis Represents either y0 or y1 axis.
          */
         getDataByScale: function (axis) {
-            return this.timeSeriesData.filter((d) => {
+            let result = this.timeSeriesData.filter((d) => {
                 return d.yAxis === axis;
             });
+            if (result === []) console.log(this.timeSeriesData);
+            return result;
         },
         /**
          * Get the Y scaling function for the given time series.
