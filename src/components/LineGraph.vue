@@ -1,6 +1,16 @@
 <template>
-    <div class="line-graph-container" :id="graphTitleId">
-        <h1>{{ graphTitle }}</h1>
+    <div class="vue-line-graph">
+        <div class="graph-header">
+            <div class="graph-header-item line-graph-btns" v-if="showOptions">
+                <button>Customize</button>
+            </div>
+            <div class="graph-header-item">
+                <h1>{{ graphTitle }}</h1>
+            </div>
+            <div></div>
+        </div>
+        <div class="line-graph-container" :id="graphTitleId">
+        </div>
     </div>
 </template>
 
@@ -158,6 +168,13 @@ export default {
         marginRight: {
             type: Number,
             default: 60
+        },
+        /**
+         * Should we give the user options to customize visualization?
+         */
+        showOptions: {
+            type: Boolean,
+            default: true
         },
         strokeWidth: {
             type: Number,
@@ -597,4 +614,29 @@ export default {
 </script>
 
 <style scoped>
+.graph-header {
+    align-content: center;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-evenly;
+}
+.graph-header > .graph-header-item {
+  flex: 0 0 5%;
+}
+
+.vue-line-graph {
+    width: 100%;
+}
+
+
+.line-graph-btns > button  {
+  background-color: steelblue;
+  border: 2px solid;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  font-size: 1.2em;
+}
+
 </style>
