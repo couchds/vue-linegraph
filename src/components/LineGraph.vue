@@ -182,6 +182,9 @@ export default {
             focusedTimeSeries: null,
             chart: null,
             chartHeader: null,
+            clipPathId: null,
+            clipPath: null,
+            defs: null,
             graphTitleId: this.htmlCompatible(this.graphTitle),
             minDatetime: null, // this will be used to calculate bar width.
             seriesPaths: {},
@@ -252,10 +255,22 @@ export default {
          */
         createChart: function () {
             let self = this;
+            //this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
+            // Add a clipPath: everything out of this area won't be drawn.
+    
+            this.defs = this.svg.append("defs");
+            this.clipPathId = 'clip-' + this.graphTitleId;
+            this.clipPath = this.defs.append("clipPath")
+                .attr("id", this.clipPathId)
+                .append("rect")
+                .attr("x", "0")
+                .attr("y", "0")
+                .attr("width", this.adjustedWidth )
+                .attr("height", this.adjustedHeight );
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
-            this.chartVisuals = this.chart.append("g");
+            this.clippedChart = this.chart.append("g").attr("clip-path", "url(#"+this.clipPathId+")");
+            this.chartVisuals = this.clippedChart.append("g");
             this.referenceRanges = this.chartVisuals.append("g").attr("id", "reference-ranges");
-            //this.referenceRanges = this.chart.append("g").attr("id", "reference-ranges");
             this.chart.call(d3.zoom()
                 .extent([[0, 0], [this.adjustedWidth, this.adjustedHeight]])
                 .on("zoom", self.updateChart));
@@ -264,6 +279,7 @@ export default {
             console.log(event);
 
             let self = this;
+            //this.clipPath.attr("transform", event.transform);
             this.chartVisuals.attr("transform", event.transform);
             this.xAxisGroup.call(self.xAxis.scale(event.transform.rescaleX(self.xScale)));
             if (this.y0AxisGroup) {
@@ -271,7 +287,8 @@ export default {
             }
             if (this.y1AxisGroup) {
                 this.y1AxisGroup.call(self.y1Axis.scale(event.transform.rescaleY(self.y1Scale)));
-            }
+            
+            this.clipPath.select("rect").attr("height", )}
             //this.chart.attr("transform", event.transform);
             //d3.select(".reference-range-"+this.graphTitleId).attr("transform", event.transform);
             /*for (const property in this.seriesPaths) {
