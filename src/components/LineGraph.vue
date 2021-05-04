@@ -227,7 +227,6 @@ export default {
         }
     },
     mounted: function () {
-        console.log('mounted!');
         this.graphTitleId = this.htmlCompatible(this.graphTitle);
         this.createLegendMap();
         this.createSVG();
@@ -249,8 +248,6 @@ export default {
             this.createYScale(Y1, 1);
             this.drawYAxis(1);
         }
-        console.log(drawingQueue);
-
         for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);
     },
     methods: {
@@ -580,11 +577,9 @@ export default {
          * @param {0|1} axis Represents either y0 or y1 axis.
          */
         getDataByScale: function (axis) {
-            let result = this.timeSeriesData.filter((d) => {
+            return result = this.timeSeriesData.filter((d) => {
                 return d.yAxis === axis;
             });
-            if (result === []) console.log(this.timeSeriesData);
-            return result;
         },
         /**
          * Get the Y scaling function for the given time series.

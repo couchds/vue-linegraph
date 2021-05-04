@@ -31,12 +31,10 @@ export default {
     },
     mounted: function () {
         this.createSVG();
-        console.log(this.legendMap);
         if (this.legendMap) this.createLegend();
     },
     watch: {
-        legendMap: function (val) {
-            console.log(val);
+        legendMap: function () {
             this.createLegend();
         }
     },
@@ -62,7 +60,7 @@ export default {
                 .enter()
                 .append("circle")
                 .attr("cx", 10)
-                .attr("cy", function(d,i){ return 50 + i*15}) // 100 is where the first dot appears. 25 is the distance between dots
+                .attr("cy", function(d,i){ return 50 + i*15})
                 .attr("r", 5)
                 .style("fill", function(d){ return color(d)});
             this.svg.selectAll("mylabels")
