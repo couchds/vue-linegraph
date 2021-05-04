@@ -276,10 +276,7 @@ export default {
                 .on("zoom", self.updateChart));
         },
         updateChart: function (event) {
-            console.log(event);
-
             let self = this;
-            //this.clipPath.attr("transform", event.transform);
             this.chartVisuals.attr("transform", event.transform);
             this.xAxisGroup.call(self.xAxis.scale(event.transform.rescaleX(self.xScale)));
             if (this.y0AxisGroup) {
@@ -289,30 +286,6 @@ export default {
                 this.y1AxisGroup.call(self.y1Axis.scale(event.transform.rescaleY(self.y1Scale)));
             
             this.clipPath.select("rect").attr("height", )}
-            //this.chart.attr("transform", event.transform);
-            //d3.select(".reference-range-"+this.graphTitleId).attr("transform", event.transform);
-            /*for (const property in this.seriesPaths) {
-                this.seriesPaths[property].attr("transform", event.transform);
-            }
-            this.xAxisGroup.call(self.xAxis.scale(event.transform.rescaleX(self.xScale)));
-            if (this.y0AxisGroup) {
-                this.y0AxisGroup.call(self.y0Axis.scale(event.transform.rescaleY(self.y0Scale)));
-            }
-            if (this.y1AxisGroup) {
-                this.y1AxisGroup.call(self.y1Axis.scale(event.transform.rescaleY(self.y1Scale)));
-            }
-            this.criticalValues
-                .selectAll("circle")
-                .attr('cx', function(d) {return self.xScale(d.datetime)})
-                .attr('cy', function(d) {return self.y0Scale(d.value)});*/
-            //this.xScale = d3.event.transform.rescaleX(this.xScale);
-            //this.xAxis.call(d3.axisBottom(this.xScale));
-            //this.y0Axis.call(d3.axisLeft(newY));
-            //this.createTimeSeries('Test Data');
-//            scatter
-//                .selectAll("circle")
-//                .attr('cx', function(d) {return newX(d.Sepal_Length)})
-//                .attr('cy', function(d) {return newY(d.Petal_Length)});
         },
         /**
          * Create queue which has the order that time series should be drawn.
@@ -416,18 +389,6 @@ export default {
                     .attr("transform", `translate(${xCoord}, 0)`)
                     .call(this.y1Axis)
             }
-            // Pass our y scaling function to the D3 axis function to draw the y axis.
-            /*this.y0Axis = this.chart
-                .append("g")
-                .attr("class", "y-axis")
-                .attr("color", function(){
-                    return timeSeries[0]["color"];
-                })
-                .attr("font-size", "20px")
-                .attr("transform", `translate(${xCoord}, 0)`)
-                .call(axisFn(yScale)
-                    .tickFormat(d3.format("~s")) // Translates for instance, 100000 -> 100K
-                )*/
         },
         /**
          * Create scale for first Y axis, on the left-hand side of the graph.
@@ -561,7 +522,6 @@ export default {
                 .data(criticalValues)
                 .enter()
                 .append("circle")
-                //.attr("class", "critical-value " + this.htmlCompatible(series.name))
                 .attr("class", "critical-value-"+this.graphTitleId)
                 .attr("fill", series.color)
                 .attr("stroke", series.color)
