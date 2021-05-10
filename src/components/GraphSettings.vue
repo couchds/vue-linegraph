@@ -4,6 +4,10 @@
         <div v-for="ts in timeSeriesData" :key="ts.name">
             <h4>{{ ts.name }}</h4>
             <input type="checkbox" :id="'checkbox-'+htmlCompatible(ts.name)" v-model="ts.active" />
+            <select :id="'select-'+htmlCompatible(ts.name)" v-model="ts.yAxis">
+                <option :value="0">0</option>
+                <option :value="1">1</option>
+            </select>
         </div>
     </div>
 </template>
