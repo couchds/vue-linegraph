@@ -2,7 +2,11 @@
     <div class="vue-line-graph">
         <div class="graph-header">
             <div class="graph-header-item line-graph-btns" v-if="showOptions">
-                <button>Customize</button>
+                <div :id="'customize-btn-'+graphTitleId" aria-describedby="tooltip" class="customize-btn" @click="handleCustomizeClicked">Customize</div>
+                <div :id="'tooltip-'+graphTitleId" class="tooltip" role="tooltip" v-show="customizeActive">
+                    <h3>Edit</h3>
+                    <div id="arrow" data-popper-arrow></div>
+                </div>
             </div>
             <div class="graph-header-item">
                 <h1>{{ graphTitle }}</h1>
@@ -21,6 +25,7 @@
 <script>
 
 import * as d3 from "d3";
+import { createPopper } from '@popperjs/core';
 import GraphLegend from './GraphLegend.vue'
 
 export default {
@@ -209,6 +214,11 @@ export default {
             chartHeader: null,
             clipPathId: null,
             clipPath: null,
+            /**
+             * Should we show the popover form to customize the
+             * visualization?
+            */
+            customizeActive: false,
             defs: null,
             graphTitleId: this.htmlCompatible(this.graphTitle),
             legendMap: null,
@@ -227,6 +237,7 @@ export default {
         }
     },
     mounted: function () {
+        this.createPopover();
         this.graphTitleId = this.htmlCompatible(this.graphTitle);
         this.createLegendMap();
         this.createSVG();
@@ -503,6 +514,13 @@ export default {
               .domain([min, max]);
             this.minDatetime = min;
         },
+        createPopover: function () {
+            const popcorn = document.querySelector('#'+'customize-btn-'+this.graphTitleId);
+            const tooltip = document.querySelector('#'+'tooltip-'+this.graphTitleId);
+            createPopper(popcorn, tooltip, {
+                placement: 'right',
+            });
+        },
         /*
          * Creates the svg container element for the entire component.
         */
@@ -604,6 +622,10 @@ export default {
                 1: this.y1Scale
             }[seriesNumber];
         },
+        handleCustomizeClicked: function () {
+            console.log('here')
+            this.customizeActive = !this.customizeActive;
+        },
         /**
          * For a given time series, set if it is active or not; i.e. if
          * it is shown to the user or not.
@@ -673,6 +695,48 @@ export default {
   color: white;
   cursor: pointer;
   font-size: 1.2em;
+}
+
+.tooltip {
+    background-color: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+#arrow,
+#arrow::before {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: inherit;
+}
+
+#arrow {
+  visibility: hidden;
+}
+
+#arrow::before {
+  visibility: visible;
+  content: '';
+  transform: rotate(45deg);
+}
+
+.tooltip[data-popper-placement^='top'] > #arrow {
+  bottom: -4px;
+}
+
+.tooltip[data-popper-placement^='bottom'] > #arrow {
+  top: -4px;
+}
+
+.tooltip[data-popper-placement^='left'] > #arrow {
+  right: -4px;
+}
+
+.tooltip[data-popper-placement^='right'] > #arrow {
+  left: -4px;
 }
 
 </style>
