@@ -129,6 +129,47 @@ export default {
                             value: 100
                         }
                     ]
+                },
+                {
+                    active: false,
+                    animateDraw: true,
+                    animateDrawDuration: 1000,
+                    color: 'green',
+                    criticalValues: [120, 200],
+                    isBar: false,
+                    name: 'Test Data 3',
+                    referenceRange: [100, 130],
+                    yAxis: 0,
+                    measurements: [
+                        {
+                            datetime: '2015-01-02',
+                            value: 110
+                        },
+                        {
+                            datetime: '2015-02-02',
+                            value: 120
+                        },
+                        {
+                            datetime: '2015-03-02',
+                            value: 140
+                        },
+                        {
+                            datetime: '2015-04-02',
+                            value: 130
+                        },
+                        {
+                            datetime: '2015-05-02',
+                            value: 160
+                        },
+                        {
+                            datetime: '2015-06-02',
+                            value: 200
+                        },
+                        {
+                            datetime: '2015-07-02',
+                            value: 240
+                        }
+                    ]
                 }
                 ]
             }
@@ -207,6 +248,11 @@ export default {
             return this.timeSeriesData.filter((d) => {
                 return d.active === true
             });
+        },
+        timeSeriesY0: function () {
+            return this.timeSeriesData.filter((d) => {
+                return d.yAxis === 0
+            });
         }
     },
     watch: {
@@ -214,7 +260,10 @@ export default {
             this.createLegendMap();
             d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
             this.createGraph(false);
-            //this.createGraph();
+        },
+        timeSeriesY0: function () {
+            d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
+            this.createGraph(false);
         }
     },
     data: function () {
