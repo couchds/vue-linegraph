@@ -4,7 +4,7 @@
             <div class="graph-header-item line-graph-btns" v-if="showOptions">
                 <div :id="'customize-btn-'+graphTitleId" aria-describedby="tooltip" class="customize-btn" @click="handleCustomizeClicked">Customize</div>
                 <div :id="'tooltip-'+graphTitleId" class="tooltip" role="tooltip" v-show="customizeActive">
-                    <GraphSettings />
+                    <GraphSettings :timeSeriesData="timeSeriesData" />
                     <div id="arrow" data-popper-arrow></div>
                 </div>
             </div>
@@ -202,6 +202,19 @@ export default {
         },
         adjustedWidth: function () {
             return this.width - this.marginLeft - this.marginRight;
+        },
+        activeTimeSeries: function () {
+            return this.timeSeriesData.filter((d) => {
+                return d.active === true
+            });
+        }
+    },
+    watch: {
+        activeTimeSeries: function () {
+            this.createLegendMap();
+            d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
+            this.createGraph(false);
+            //this.createGraph();
         }
     },
     data: function () {
@@ -242,6 +255,8 @@ export default {
         this.createPopover();
         this.graphTitleId = this.htmlCompatible(this.graphTitle);
         this.createLegendMap();
+        this.createGraph();
+        /*this.createLegendMap();
         this.createSVG();
         this.createChart();
         this.drawCoordinateAxes();
@@ -250,7 +265,6 @@ export default {
 
         
         const drawingQueue = this.createDrawingQueue();
-
         // refactor
         let Y0 = this.getDataByScale(0);
         if (Y0.length > 0) {
@@ -262,7 +276,7 @@ export default {
             this.createYScale(Y1, 1);
             this.drawYAxis(1);
         }
-        for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);
+        for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);*/
     },
     methods: {
         /**
@@ -315,6 +329,34 @@ export default {
                 .on("zoom", self.updateChart));
         },
         /**
+         * Performs all of the steps required to create the SVG for the visualization.
+         */
+        createGraph: function (initial=true) {
+            this.createSVG(initial);
+            this.createChart();
+            this.drawCoordinateAxes();
+            this.createXScale();
+            this.drawXAxis();
+            const drawingQueue = this.createDrawingQueue(); // the order in which the series are drawn
+            let Y0 = this.getDataByScale(0);
+            let Y0Active = Y0.filter((d) => {
+                return d.active === true;
+            });
+            if (Y0Active.length > 0) {
+                this.createYScale(Y0, 0);
+                this.drawYAxis(0);
+            }
+            let Y1 = this.getDataByScale(1);
+            let Y1Active = Y1.filter((d) => {
+                return d.active === true;
+            });
+            if (Y1Active.length > 0) {
+                this.createYScale(Y1, 1);
+                this.drawYAxis(1);
+            }
+            for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);
+        },
+        /**
          * Draws the x and y coordinate axes.
          */
         drawCoordinateAxes: function () {
@@ -347,11 +389,12 @@ export default {
             let drawingQueue = [];
             const Y = this.getDataByScale(0);
             const Y1 = this.getDataByScale(1);
-            for (var i = 0; i < Y.concat(Y1).length; i++) {
-                if (Y.concat(Y1)[i]["isBar"] === true) drawingQueue.push(Y.concat(Y1)[i]["name"]);
+            let YCombined = Y.concat(Y1);
+            for (var i = 0; i < YCombined.length; i++) {
+                if (YCombined[i]["isBar"] === true && YCombined[i]["active"] === true) drawingQueue.push(Y.concat(Y1)[i]["name"]);
             }
-            for (i = 0; i < Y.concat(Y1).length; i++) {
-                if (Y.concat(Y1)[i]["isBar"] === false) drawingQueue.push(Y.concat(Y1)[i]["name"]);
+            for (i = 0; i < YCombined.length; i++) {
+                if (YCombined[i]["isBar"] === false && YCombined[i]["active"] === true) drawingQueue.push(Y.concat(Y1)[i]["name"]);
             }
             return drawingQueue;
         },
@@ -369,6 +412,7 @@ export default {
             for (var i = 0; i < activeTimeSeries.length; i++) {
                 newLegendMap[activeTimeSeries[i]["name"]] = activeTimeSeries[i]["color"];
             }
+            console.log(newLegendMap);
             this.$set(this, 'legendMap', newLegendMap);
         },
         /**
@@ -526,10 +570,12 @@ export default {
         /*
          * Creates the svg container element for the entire component.
         */
-        createSVG: function () {
+        createSVG: function (initial) {
             d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
-            this.svg = d3.select('#'+this.graphTitleId).append('svg')
-              .attr("viewBox", `0 0 ` + this.width + ` ` + this.height); // we setup with viewBox to add responsiveness.
+            if (initial) {
+                this.svg = d3.select('#'+this.graphTitleId).append('svg')
+                    .attr("viewBox", `0 0 ` + this.width + ` ` + this.height); // we setup with viewBox to add responsiveness.
+            }
         },
         drawLine: function (data) {
             let self = this;
@@ -625,7 +671,6 @@ export default {
             }[seriesNumber];
         },
         handleCustomizeClicked: function () {
-            console.log('here')
             this.customizeActive = !this.customizeActive;
         },
         /**

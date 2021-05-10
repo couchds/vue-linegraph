@@ -35,6 +35,7 @@ export default {
     },
     watch: {
         legendMap: function () {
+            d3.select('#'+this.legendId).select('svg').selectAll("*").remove();
             this.createLegend();
         }
     },
@@ -52,6 +53,7 @@ export default {
                 keys.push(key);
                 colors.push(color);
             }
+            console.log(this.legendMap);
             var color = d3.scaleOrdinal()
                 .domain(keys)
                 .range(colors);
