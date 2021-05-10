@@ -4,7 +4,7 @@
             <div class="graph-header-item line-graph-btns" v-if="showOptions">
                 <div :id="'customize-btn-'+graphTitleId" aria-describedby="tooltip" class="customize-btn" @click="handleCustomizeClicked">Customize</div>
                 <div :id="'tooltip-'+graphTitleId" class="tooltip" role="tooltip" v-show="customizeActive">
-                    <h3>Edit</h3>
+                    <GraphSettings />
                     <div id="arrow" data-popper-arrow></div>
                 </div>
             </div>
@@ -26,12 +26,14 @@
 
 import * as d3 from "d3";
 import { createPopper } from '@popperjs/core';
-import GraphLegend from './GraphLegend.vue'
+import GraphLegend from './GraphLegend.vue';
+import GraphSettings from './GraphSettings.vue';
 
 export default {
     name: 'LineGraph',
     components: {
-        GraphLegend
+        GraphLegend,
+        GraphSettings
     },
     /**
      * Props are immutable within the component itself,
@@ -737,6 +739,15 @@ export default {
 
 .tooltip[data-popper-placement^='right'] > #arrow {
   left: -4px;
+}
+
+.customize-btn {
+    background-color: #4682B4;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+    padding: 4px;
 }
 
 </style>
