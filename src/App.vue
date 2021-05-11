@@ -15,7 +15,9 @@
       <div class="flex-row-item" v-for="visual in projectData" :key="visual.id">
         <LineGraph :graphTitle="visual.graphTitle"
           :timeSeriesData="visual.timeSeriesData"
-          :datetimeFormat="visual.datetimeFormat" />
+          :datetimeFormat="visual.datetimeFormat" 
+          height="400"
+          width="700" />
 
       </div>
     </div>

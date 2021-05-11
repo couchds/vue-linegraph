@@ -11,13 +11,20 @@
             <div class="graph-header-item">
                 <h1>{{ graphTitle }}</h1>
             </div>
-            <div class="graph-header-item">
-                <GraphLegend :legendId="'legend-'+graphTitleId"
-                    :legendMap="legendMap"
+            <div class="graph-header-item"></div>
+        </div>
+        <div class="graph-section">
+            <div>
+                <GraphLegend :legendId="'legend0-'+graphTitleId"
+                    :legendMap="legendMap0"
                 />
             </div>
-        </div>
-        <div class="line-graph-container" :id="graphTitleId">
+            <div class="line-graph-container" :id="graphTitleId"></div>
+            <div>
+                <GraphLegend :legendId="'legend1-'+graphTitleId"
+                    :legendMap="legendMap1"
+                />
+            </div>
         </div>
     </div>
 </template>
@@ -71,7 +78,7 @@ export default {
                         },
                         {
                             datetime: '2015-04-02',
-                            value: 130
+                            value: -30
                         },
                         {
                             datetime: '2015-05-02',
@@ -285,7 +292,8 @@ export default {
             customizeActive: false,
             defs: null,
             graphTitleId: this.htmlCompatible(this.graphTitle),
-            legendMap: null,
+            legendMap0: null,
+            legendMap1: null,
             minDatetime: null, // this will be used to calculate bar width.
             seriesPaths: {},
             svg: null,
@@ -452,17 +460,27 @@ export default {
          * in the Legend component.
          */
         createLegendMap: function () {
-            let newLegendMap = {};
+            let newLegendMap0 = {};
+            let newLegendMap1 = {};
             const Y = this.getDataByScale(0);
             const Y1 = this.getDataByScale(1);
-            let activeTimeSeries = Y.concat(Y1).filter((d) => {
+            let activeTimeSeries0 = Y.filter((d) => {
                 return d.active === true;
-            })
-            for (var i = 0; i < activeTimeSeries.length; i++) {
-                newLegendMap[activeTimeSeries[i]["name"]] = activeTimeSeries[i]["color"];
+            });
+            let activeTimeSeries1 = Y1.filter((d) => {
+                return d.active === true;
+            });
+            //let activeTimeSeries = Y.concat(Y1).filter((d) => {
+            //    return d.active === true;
+            //})
+            for (var i = 0; i < activeTimeSeries0.length; i++) {
+                newLegendMap0[activeTimeSeries0[i]["name"]] = activeTimeSeries0[i]["color"];
             }
-            console.log(newLegendMap);
-            this.$set(this, 'legendMap', newLegendMap);
+            for (i = 0; i < activeTimeSeries1.length; i++) {
+                newLegendMap1[activeTimeSeries1[i]["name"]] = activeTimeSeries1[i]["color"];
+            }
+            this.$set(this, 'legendMap0', newLegendMap0);
+            this.$set(this, 'legendMap1', newLegendMap1);
         },
         /**
          * Create a time series from its name.
@@ -559,6 +577,7 @@ export default {
         createYScale: function (data, axis) {
             // Find the maximum value among all time series.
             const allMeasurements = data.map(d => d.measurements);
+            //const min = d3.min(allMeasurements,  function (d) { return d3.min(d, function (d) { return d.value }); });
             const max = d3.max(allMeasurements,  function (d) { return d3.max(d, function (d) { return d.value }); });
             const scale = d3.scaleLinear()
               .range([this.adjustedHeight, 0])
@@ -774,9 +793,20 @@ export default {
     align-items: center;
     justify-content: space-evenly;
 }
+
 .graph-header > .graph-header-item {
   flex: 0 0 5%;
   width: 100%;
+}
+
+.graph-section {
+    display: flex;
+    align-content: center;
+}
+
+.line-graph-container {
+    height: 100%;
+    width: 100%;
 }
 
 .vue-line-graph {

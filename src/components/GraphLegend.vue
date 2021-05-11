@@ -43,7 +43,7 @@ export default {
         createSVG: function () {
             d3.select('#'+this.legendId).select('svg').selectAll("*").remove();
             this.svg = d3.select('#'+this.legendId).append('svg')
-              .attr("width", 100)
+              .attr("width", 90)
               .attr("height", 100);
         },
         createLegend: function () {
