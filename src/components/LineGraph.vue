@@ -1,19 +1,30 @@
 <template>
     <div class="vue-line-graph">
-        <div class="graph-header">
+        <div class="graph-header" :style="graphHeaderStyle">
             <div class="graph-header-item line-graph-btns" v-if="showOptions">
-                <button>Customize</button>
+                <div :id="'customize-btn-'+graphTitleId" aria-describedby="tooltip" class="customize-btn" @click="handleCustomizeClicked">Customize</div>
+                <div :id="'tooltip-'+graphTitleId" class="tooltip" role="tooltip" v-show="customizeActive">
+                    <GraphSettings :timeSeriesData="timeSeriesData" />
+                    <div id="arrow" data-popper-arrow></div>
+                </div>
             </div>
             <div class="graph-header-item">
                 <h1>{{ graphTitle }}</h1>
             </div>
-            <div class="graph-header-item">
-                <GraphLegend :legendId="'legend-'+graphTitleId"
-                    :legendMap="legendMap"
+            <div class="graph-header-item"></div>
+        </div>
+        <div class="graph-section">
+            <div class="graph-section-1">
+                <GraphLegend :legendId="'legend0-'+graphTitleId"
+                    :legendMap="legendMap0"
                 />
             </div>
-        </div>
-        <div class="line-graph-container" :id="graphTitleId">
+            <div class="line-graph-container" :id="graphTitleId"></div>
+            <div>
+                <GraphLegend :legendId="'legend1-'+graphTitleId"
+                    :legendMap="legendMap1"
+                />
+            </div>
         </div>
     </div>
 </template>
@@ -21,12 +32,15 @@
 <script>
 
 import * as d3 from "d3";
-import GraphLegend from './GraphLegend.vue'
+import { createPopper } from '@popperjs/core';
+import GraphLegend from './GraphLegend.vue';
+import GraphSettings from './GraphSettings.vue';
 
 export default {
     name: 'LineGraph',
     components: {
-        GraphLegend
+        GraphLegend,
+        GraphSettings
     },
     /**
      * Props are immutable within the component itself,
@@ -64,7 +78,7 @@ export default {
                         },
                         {
                             datetime: '2015-04-02',
-                            value: 130
+                            value: -30
                         },
                         {
                             datetime: '2015-05-02',
@@ -122,9 +136,64 @@ export default {
                             value: 100
                         }
                     ]
+                },
+                {
+                    active: false,
+                    animateDraw: true,
+                    animateDrawDuration: 1000,
+                    color: 'green',
+                    criticalValues: [120, 200],
+                    isBar: false,
+                    name: 'Test Data 3',
+                    referenceRange: [100, 130],
+                    yAxis: 0,
+                    measurements: [
+                        {
+                            datetime: '2015-01-02',
+                            value: 110
+                        },
+                        {
+                            datetime: '2015-02-02',
+                            value: 120
+                        },
+                        {
+                            datetime: '2015-03-02',
+                            value: 140
+                        },
+                        {
+                            datetime: '2015-04-02',
+                            value: 130
+                        },
+                        {
+                            datetime: '2015-05-02',
+                            value: 160
+                        },
+                        {
+                            datetime: '2015-06-02',
+                            value: 200
+                        },
+                        {
+                            datetime: '2015-07-02',
+                            value: 240
+                        }
+                    ]
                 }
                 ]
             }
+        },
+        /**
+         * The color of the header's background.
+         */
+        primaryColor: {
+            type: String,
+            default: 'white'
+        },
+        /**
+         * The color of the header's text.
+         */
+        secondaryColor: {
+            type: String,
+            default: 'black'
         },
         /**
          * The format that both series have their datetimes in.
@@ -195,6 +264,29 @@ export default {
         },
         adjustedWidth: function () {
             return this.width - this.marginLeft - this.marginRight;
+        },
+        activeTimeSeries: function () {
+            this.createLegendMap();
+            return this.timeSeriesData.filter((d) => {
+                return d.active === true
+            });
+        },
+        timeSeriesY0: function () {
+            this.createLegendMap();
+            return this.timeSeriesData.filter((d) => {
+                return d.yAxis === 0
+            });
+        }
+    },
+    watch: {
+        activeTimeSeries: function () {
+            this.createLegendMap();
+            d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
+            this.createGraph(false);
+        },
+        timeSeriesY0: function () {
+            d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
+            this.createGraph(false);
         }
     },
     data: function () {
@@ -209,12 +301,23 @@ export default {
             chartHeader: null,
             clipPathId: null,
             clipPath: null,
+            /**
+             * Should we show the popover form to customize the
+             * visualization?
+            */
+            customizeActive: false,
             defs: null,
+            graphHeaderStyle: {
+                backgroundColor: this.primaryColor,
+                color: this.secondaryColor
+            },
             graphTitleId: this.htmlCompatible(this.graphTitle),
-            legendMap: null,
+            legendMap0: null,
+            legendMap1: null,
             minDatetime: null, // this will be used to calculate bar width.
             seriesPaths: {},
             svg: null,
+            tickFontFamily: null,
             xAxis: null,
             xAxisGroup: null,
             y0Axis: null,
@@ -227,16 +330,19 @@ export default {
         }
     },
     mounted: function () {
+        this.createPopover();
         this.graphTitleId = this.htmlCompatible(this.graphTitle);
         this.createLegendMap();
+        this.createGraph();
+        /*this.createLegendMap();
         this.createSVG();
         this.createChart();
+        this.drawCoordinateAxes();
         this.createXScale();
         this.drawXAxis();
 
         
         const drawingQueue = this.createDrawingQueue();
-
         // refactor
         let Y0 = this.getDataByScale(0);
         if (Y0.length > 0) {
@@ -248,7 +354,7 @@ export default {
             this.createYScale(Y1, 1);
             this.drawYAxis(1);
         }
-        for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);
+        for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);*/
     },
     methods: {
         /**
@@ -294,11 +400,52 @@ export default {
                 .attr("height", this.adjustedHeight );
             this.chart = this.svg.append("g").attr("transform", `translate(${this.marginLeft},0)`);
             this.clippedChart = this.chart.append("g").attr("clip-path", "url(#"+this.clipPathId+")");
-            this.chartVisuals = this.clippedChart.append("g");
+            this.chartVisuals = this.clippedChart.append("g").attr("class", "chart-visuals");
             this.referenceRanges = this.chartVisuals.append("g").attr("id", "reference-ranges");
             this.svg.call(d3.zoom()
                 .scaleExtent([0.9, 3])
                 .on("zoom", self.updateChart));
+        },
+        /**
+         * Performs all of the steps required to create the SVG for the visualization.
+         */
+        createGraph: function (initial=true) {
+            this.createSVG(initial);
+            this.createChart();
+            this.drawCoordinateAxes();
+            this.createXScale();
+            this.drawXAxis();
+            const drawingQueue = this.createDrawingQueue(); // the order in which the series are drawn
+            let Y0 = this.getDataByScale(0);
+            let Y0Active = Y0.filter((d) => {
+                return d.active === true;
+            });
+            if (Y0Active.length > 0) {
+                this.createYScale(Y0, 0);
+                this.drawYAxis(0);
+            }
+            let Y1 = this.getDataByScale(1);
+            let Y1Active = Y1.filter((d) => {
+                return d.active === true;
+            });
+            if (Y1Active.length > 0) {
+                this.createYScale(Y1, 1);
+                this.drawYAxis(1);
+            }
+            for (var i = 0; i < drawingQueue.length; i++) this.createTimeSeries(drawingQueue[i]);
+        },
+        /**
+         * Draws the x and y coordinate axes.
+         */
+        drawCoordinateAxes: function () {
+            this.chartVisuals.append("g")
+                .attr("class", "x-coordinate")
+                .append("line")
+                .attr("x1", -10000)
+                .attr("x2", 10000)
+                .attr("y1", this.adjustedHeight)
+                .attr("y2", this.adjustedHeight)
+                .attr("stroke", "black");
         },
         updateChart: function (event) {
             let self = this;
@@ -320,11 +467,12 @@ export default {
             let drawingQueue = [];
             const Y = this.getDataByScale(0);
             const Y1 = this.getDataByScale(1);
-            for (var i = 0; i < Y.concat(Y1).length; i++) {
-                if (Y.concat(Y1)[i]["isBar"] === true) drawingQueue.push(Y.concat(Y1)[i]["name"]);
+            let YCombined = Y.concat(Y1);
+            for (var i = 0; i < YCombined.length; i++) {
+                if (YCombined[i]["isBar"] === true && YCombined[i]["active"] === true) drawingQueue.push(Y.concat(Y1)[i]["name"]);
             }
-            for (i = 0; i < Y.concat(Y1).length; i++) {
-                if (Y.concat(Y1)[i]["isBar"] === false) drawingQueue.push(Y.concat(Y1)[i]["name"]);
+            for (i = 0; i < YCombined.length; i++) {
+                if (YCombined[i]["isBar"] === false && YCombined[i]["active"] === true) drawingQueue.push(Y.concat(Y1)[i]["name"]);
             }
             return drawingQueue;
         },
@@ -333,16 +481,27 @@ export default {
          * in the Legend component.
          */
         createLegendMap: function () {
-            let newLegendMap = {};
+            let newLegendMap0 = {};
+            let newLegendMap1 = {};
             const Y = this.getDataByScale(0);
             const Y1 = this.getDataByScale(1);
-            let activeTimeSeries = Y.concat(Y1).filter((d) => {
+            let activeTimeSeries0 = Y.filter((d) => {
                 return d.active === true;
-            })
-            for (var i = 0; i < activeTimeSeries.length; i++) {
-                newLegendMap[activeTimeSeries[i]["name"]] = activeTimeSeries[i]["color"];
+            });
+            let activeTimeSeries1 = Y1.filter((d) => {
+                return d.active === true;
+            });
+            //let activeTimeSeries = Y.concat(Y1).filter((d) => {
+            //    return d.active === true;
+            //})
+            for (var i = 0; i < activeTimeSeries0.length; i++) {
+                newLegendMap0[activeTimeSeries0[i]["name"]] = activeTimeSeries0[i]["color"];
             }
-            this.$set(this, 'legendMap', newLegendMap);
+            for (i = 0; i < activeTimeSeries1.length; i++) {
+                newLegendMap1[activeTimeSeries1[i]["name"]] = activeTimeSeries1[i]["color"];
+            }
+            this.$set(this, 'legendMap0', newLegendMap0);
+            this.$set(this, 'legendMap1', newLegendMap1);
         },
         /**
          * Create a time series from its name.
@@ -390,9 +549,9 @@ export default {
          */
         drawYAxis: function (axis) {
             //var timeSeries = this.getDataByScale(axis);
-            let timeSeries = this.timeSeriesData.filter((d) => {
-                return d.yAxis === axis;
-            });
+            //let timeSeries = this.timeSeriesData.filter((d) => {
+            //    return d.yAxis === axis;
+            //});
             // Use the D3 axis function that corresponds to y0 (left) or y1 (right) axis.
             /*let axisFn = {
                 0: d3.axisLeft,
@@ -409,10 +568,10 @@ export default {
                 this.y0Axis = d3.axisLeft(yScale).tickFormat(d3.format("~s"));
                 this.y0AxisGroup = this.chart
                     .append("g")
-                    .attr("class", "y-axis")
-                    .attr("color", function(){
-                        return timeSeries[0]["color"];
-                    })
+                    .attr("class", "y-axis axis")
+                    //.attr("color", function(){
+                    //    return timeSeries[0]["color"];
+                    //})
                     .attr("font-size", "20px")
                     .attr("transform", `translate(${xCoord}, 0)`)
                     .call(this.y0Axis);
@@ -421,10 +580,10 @@ export default {
                 this.y1Axis = d3.axisRight(yScale).tickFormat(d3.format("~s"));
                 this.y1AxisGroup = this.chart
                     .append("g")
-                    .attr("class", "y-axis")
-                    .attr("color", function(){
-                        return timeSeries[0]["color"];
-                    })
+                    .attr("class", "y-axis axis")
+                    //.attr("color", function(){
+                    //    return timeSeries[0]["color"];
+                    //})
                     .attr("font-size", "20px")
                     .attr("transform", `translate(${xCoord}, 0)`)
                     .call(this.y1Axis)
@@ -439,6 +598,7 @@ export default {
         createYScale: function (data, axis) {
             // Find the maximum value among all time series.
             const allMeasurements = data.map(d => d.measurements);
+            //const min = d3.min(allMeasurements,  function (d) { return d3.min(d, function (d) { return d.value }); });
             const max = d3.max(allMeasurements,  function (d) { return d3.max(d, function (d) { return d.value }); });
             const scale = d3.scaleLinear()
               .range([this.adjustedHeight, 0])
@@ -453,7 +613,7 @@ export default {
             this.xAxis = d3.axisBottom(this.xScale).ticks(10);
             this.xAxisGroup = this.chart
               .append("g")
-              .attr("class", "x-axis")
+              .attr("class", "x-axis axis")
               .attr("transform", `translate(0,${this.adjustedHeight})`)
               .call(this.xAxis);
             //this.xAxisGroup
@@ -489,13 +649,22 @@ export default {
               .domain([min, max]);
             this.minDatetime = min;
         },
+        createPopover: function () {
+            const popcorn = document.querySelector('#'+'customize-btn-'+this.graphTitleId);
+            const tooltip = document.querySelector('#'+'tooltip-'+this.graphTitleId);
+            createPopper(popcorn, tooltip, {
+                placement: 'right',
+            });
+        },
         /*
          * Creates the svg container element for the entire component.
         */
-        createSVG: function () {
+        createSVG: function (initial) {
             d3.select('#'+this.graphTitleId).select('svg').selectAll("*").remove();
-            this.svg = d3.select('#'+this.graphTitleId).append('svg')
-              .attr("viewBox", `0 0 ` + this.width + ` ` + this.height); // we setup with viewBox to add responsiveness.
+            if (initial) {
+                this.svg = d3.select('#'+this.graphTitleId).append('svg')
+                    .attr("viewBox", `0 0 ` + this.width + ` ` + this.height); // we setup with viewBox to add responsiveness.
+            }
         },
         drawLine: function (data) {
             let self = this;
@@ -533,7 +702,7 @@ export default {
             let yScale = this.getYScale(series.yAxis);
             let yVal1 = yScale(series.referenceRange[0]);
             let yVal2 = yScale(series.referenceRange[1]);
-            var rectData = [{x1: 0, x2: this.adjustedWidth, y1: yVal2, y2: yVal1}];
+            var rectData = [{x1: -10000, x2: 10000, y1: yVal2, y2: yVal1}];
             this.chart.select('#reference-ranges').selectAll('foo')
                 .data(rectData)
                 .enter()
@@ -558,8 +727,9 @@ export default {
             let criticalValues = series.measurements.filter((d) => {
                     return (d.value <= series.criticalValues[0]) || (d.value >= series.criticalValues[1]);
             });
+            console.log(criticalValues);
             var parse = d3.timeParse(this.datetimeFormat);
-            this.criticalValues = this.chartVisuals.selectAll("circle")
+            this.criticalValues = this.chartVisuals.selectAll("foo")
                 .data(criticalValues)
                 .enter()
                 .append("circle")
@@ -589,6 +759,9 @@ export default {
                 0: this.y0Scale,
                 1: this.y1Scale
             }[seriesNumber];
+        },
+        handleCustomizeClicked: function () {
+            this.customizeActive = !this.customizeActive;
         },
         /**
          * For a given time series, set if it is active or not; i.e. if
@@ -641,10 +814,22 @@ export default {
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-evenly;
+    margin-bottom: 3%;
 }
+
 .graph-header > .graph-header-item {
   flex: 0 0 5%;
   width: 100%;
+}
+
+.graph-section {
+    display: flex;
+    align-content: center;
+}
+
+.line-graph-container {
+    height: 100%;
+    width: 100%;
 }
 
 .vue-line-graph {
@@ -659,6 +844,62 @@ export default {
   color: white;
   cursor: pointer;
   font-size: 1.2em;
+}
+
+.tooltip {
+    background-color: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+#arrow,
+#arrow::before {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: inherit;
+}
+
+#arrow {
+  visibility: hidden;
+}
+
+#arrow::before {
+  visibility: visible;
+  content: '';
+  transform: rotate(45deg);
+}
+
+.tooltip[data-popper-placement^='top'] > #arrow {
+  bottom: -4px;
+}
+
+.tooltip[data-popper-placement^='bottom'] > #arrow {
+  top: -4px;
+}
+
+.tooltip[data-popper-placement^='left'] > #arrow {
+  right: -4px;
+}
+
+.tooltip[data-popper-placement^='right'] > #arrow {
+  left: -4px;
+}
+
+.customize-btn {
+    background-color: #4682B4;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+    padding: 4px;
+}
+
+.graph-section-1 {
+    margin-right: 0;
+    margin-left: 0;
 }
 
 </style>

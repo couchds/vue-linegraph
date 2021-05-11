@@ -15,7 +15,11 @@
       <div class="flex-row-item" v-for="visual in projectData" :key="visual.id">
         <LineGraph :graphTitle="visual.graphTitle"
           :timeSeriesData="visual.timeSeriesData"
-          :datetimeFormat="visual.datetimeFormat" />
+          :datetimeFormat="visual.datetimeFormat" 
+          primaryColor="rgba(0,206,203,0.7)"
+          secondaryColor="#F1F1F1"
+          height=400
+          width=700 />
 
       </div>
     </div>
@@ -156,13 +160,12 @@ export default {
 
 <style>
 
-.y-axis text {
+.axis text {
+    font-family: Avenir, Helvetica, Arial, sans-serif !important;
     font-size: 1.5em !important;
+    font-weight: 500 !important;
 }
 
-.x-axis text {
-    font-size: 1.5em !important;
-}
 
 html, body {
   margin: 0;
@@ -178,7 +181,7 @@ html, body {
 }
 
 .app-header {
-  background-color: rgb(87, 87, 87);
+  background-color: #575d5c;
   font-size: 2vw;
   text-align: left;
   margin-bottom: 20px;
@@ -201,7 +204,10 @@ html, body {
 }
 
 .flex-row > .flex-row-item {
-  flex: 0 0 30%;
+  border: 4px solid;
+	border-image: linear-gradient(45deg, rgb(0, 206, 203, 0.3), rgb(0, 172, 170, 0.3)) 1;
+  flex: 0 0 40%;
+  margin-bottom: 3%;
 }
 
 
