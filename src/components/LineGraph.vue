@@ -252,11 +252,13 @@ export default {
             return this.width - this.marginLeft - this.marginRight;
         },
         activeTimeSeries: function () {
+            this.createLegendMap();
             return this.timeSeriesData.filter((d) => {
                 return d.active === true
             });
         },
         timeSeriesY0: function () {
+            this.createLegendMap();
             return this.timeSeriesData.filter((d) => {
                 return d.yAxis === 0
             });
@@ -528,9 +530,9 @@ export default {
          */
         drawYAxis: function (axis) {
             //var timeSeries = this.getDataByScale(axis);
-            let timeSeries = this.timeSeriesData.filter((d) => {
-                return d.yAxis === axis;
-            });
+            //let timeSeries = this.timeSeriesData.filter((d) => {
+            //    return d.yAxis === axis;
+            //});
             // Use the D3 axis function that corresponds to y0 (left) or y1 (right) axis.
             /*let axisFn = {
                 0: d3.axisLeft,
@@ -548,9 +550,9 @@ export default {
                 this.y0AxisGroup = this.chart
                     .append("g")
                     .attr("class", "y-axis")
-                    .attr("color", function(){
-                        return timeSeries[0]["color"];
-                    })
+                    //.attr("color", function(){
+                    //    return timeSeries[0]["color"];
+                    //})
                     .attr("font-size", "20px")
                     .attr("transform", `translate(${xCoord}, 0)`)
                     .call(this.y0Axis);
@@ -560,9 +562,9 @@ export default {
                 this.y1AxisGroup = this.chart
                     .append("g")
                     .attr("class", "y-axis")
-                    .attr("color", function(){
-                        return timeSeries[0]["color"];
-                    })
+                    //.attr("color", function(){
+                    //    return timeSeries[0]["color"];
+                    //})
                     .attr("font-size", "20px")
                     .attr("transform", `translate(${xCoord}, 0)`)
                     .call(this.y1Axis)

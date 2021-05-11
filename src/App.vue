@@ -180,7 +180,7 @@ html, body {
 }
 
 .app-header {
-  background-color: rgb(87, 87, 87);
+  background-color: #575d5c;
   font-size: 2vw;
   text-align: left;
   margin-bottom: 20px;
@@ -203,7 +203,10 @@ html, body {
 }
 
 .flex-row > .flex-row-item {
-  flex: 0 0 30%;
+  border: 4px solid;
+	border-image: linear-gradient(45deg, rgb(0, 206, 203, 0.3), rgb(0, 172, 170, 0.3)) 1;
+  flex: 0 0 40%;
+  margin-bottom: 3%;
 }
 
 
