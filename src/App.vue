@@ -18,8 +18,8 @@
           :datetimeFormat="visual.datetimeFormat" 
           primaryColor="rgba(0,206,203,0.7)"
           secondaryColor="#F1F1F1"
-          height="400"
-          width="700" />
+          height=400
+          width=700 />
 
       </div>
     </div>

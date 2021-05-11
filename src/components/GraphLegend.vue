@@ -53,7 +53,6 @@ export default {
                 keys.push(key);
                 colors.push(color);
             }
-            console.log(this.legendMap);
             var color = d3.scaleOrdinal()
                 .domain(keys)
                 .range(colors);

@@ -727,8 +727,9 @@ export default {
             let criticalValues = series.measurements.filter((d) => {
                     return (d.value <= series.criticalValues[0]) || (d.value >= series.criticalValues[1]);
             });
+            console.log(criticalValues);
             var parse = d3.timeParse(this.datetimeFormat);
-            this.criticalValues = this.chartVisuals.selectAll("circle")
+            this.criticalValues = this.chartVisuals.selectAll("foo")
                 .data(criticalValues)
                 .enter()
                 .append("circle")
