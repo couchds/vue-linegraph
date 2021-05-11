@@ -1,6 +1,6 @@
 <template>
     <div class="vue-line-graph">
-        <div class="graph-header">
+        <div class="graph-header" :style="graphHeaderStyle">
             <div class="graph-header-item line-graph-btns" v-if="showOptions">
                 <div :id="'customize-btn-'+graphTitleId" aria-describedby="tooltip" class="customize-btn" @click="handleCustomizeClicked">Customize</div>
                 <div :id="'tooltip-'+graphTitleId" class="tooltip" role="tooltip" v-show="customizeActive">
@@ -14,7 +14,7 @@
             <div class="graph-header-item"></div>
         </div>
         <div class="graph-section">
-            <div>
+            <div class="graph-section-1">
                 <GraphLegend :legendId="'legend0-'+graphTitleId"
                     :legendMap="legendMap0"
                 />
@@ -182,6 +182,20 @@ export default {
             }
         },
         /**
+         * The color of the header's background.
+         */
+        primaryColor: {
+            type: String,
+            default: 'white'
+        },
+        /**
+         * The color of the header's text.
+         */
+        secondaryColor: {
+            type: String,
+            default: 'black'
+        },
+        /**
          * The format that both series have their datetimes in.
          * In the future, we might want to move this to the series itself
          * (what if each series has its own DT format?)
@@ -293,12 +307,17 @@ export default {
             */
             customizeActive: false,
             defs: null,
+            graphHeaderStyle: {
+                backgroundColor: this.primaryColor,
+                color: this.secondaryColor
+            },
             graphTitleId: this.htmlCompatible(this.graphTitle),
             legendMap0: null,
             legendMap1: null,
             minDatetime: null, // this will be used to calculate bar width.
             seriesPaths: {},
             svg: null,
+            tickFontFamily: null,
             xAxis: null,
             xAxisGroup: null,
             y0Axis: null,
@@ -549,7 +568,7 @@ export default {
                 this.y0Axis = d3.axisLeft(yScale).tickFormat(d3.format("~s"));
                 this.y0AxisGroup = this.chart
                     .append("g")
-                    .attr("class", "y-axis")
+                    .attr("class", "y-axis axis")
                     //.attr("color", function(){
                     //    return timeSeries[0]["color"];
                     //})
@@ -561,7 +580,7 @@ export default {
                 this.y1Axis = d3.axisRight(yScale).tickFormat(d3.format("~s"));
                 this.y1AxisGroup = this.chart
                     .append("g")
-                    .attr("class", "y-axis")
+                    .attr("class", "y-axis axis")
                     //.attr("color", function(){
                     //    return timeSeries[0]["color"];
                     //})
@@ -594,7 +613,7 @@ export default {
             this.xAxis = d3.axisBottom(this.xScale).ticks(10);
             this.xAxisGroup = this.chart
               .append("g")
-              .attr("class", "x-axis")
+              .attr("class", "x-axis axis")
               .attr("transform", `translate(0,${this.adjustedHeight})`)
               .call(this.xAxis);
             //this.xAxisGroup
@@ -794,6 +813,7 @@ export default {
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-evenly;
+    margin-bottom: 3%;
 }
 
 .graph-header > .graph-header-item {
@@ -874,6 +894,11 @@ export default {
     color: white;
     font-weight: bold;
     padding: 4px;
+}
+
+.graph-section-1 {
+    margin-right: 0;
+    margin-left: 0;
 }
 
 </style>

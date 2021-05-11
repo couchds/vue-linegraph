@@ -16,6 +16,8 @@
         <LineGraph :graphTitle="visual.graphTitle"
           :timeSeriesData="visual.timeSeriesData"
           :datetimeFormat="visual.datetimeFormat" 
+          primaryColor="rgba(0,206,203,0.7)"
+          secondaryColor="#F1F1F1"
           height="400"
           width="700" />
 
@@ -158,13 +160,12 @@ export default {
 
 <style>
 
-.y-axis text {
+.axis text {
+    font-family: Avenir, Helvetica, Arial, sans-serif !important;
     font-size: 1.5em !important;
+    font-weight: 500 !important;
 }
 
-.x-axis text {
-    font-size: 1.5em !important;
-}
 
 html, body {
   margin: 0;
