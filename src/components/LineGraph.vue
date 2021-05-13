@@ -11,7 +11,8 @@
             <div class="graph-header-item">
                 <h1>{{ graphTitle }}</h1>
             </div>
-            <div class="graph-header-item"></div>
+            <div class="graph-header-item">
+            </div>
         </div>
         <div class="graph-section">
             <div class="graph-section-1">
@@ -727,7 +728,6 @@ export default {
             let criticalValues = series.measurements.filter((d) => {
                     return (d.value <= series.criticalValues[0]) || (d.value >= series.criticalValues[1]);
             });
-            console.log(criticalValues);
             var parse = d3.timeParse(this.datetimeFormat);
             this.criticalValues = this.chartVisuals.selectAll("foo")
                 .data(criticalValues)

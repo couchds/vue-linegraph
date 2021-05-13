@@ -8,7 +8,7 @@
     <div id="btn-examples">
       <h1>Actions</h1>
       <button class="demo-btn" @click="randomizeData">Randomize Data</button><br />
-      <label># of visuals:</label><input type="text" v-model="numVisualsInput" @change="updateNumVisuals" />
+      <label># of visuals:</label><input type="text" v-model="numVisualsInput"  @change="updateNumVisuals" />
     </div>
 
     <div class="flex-row">
