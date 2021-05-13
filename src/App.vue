@@ -19,7 +19,8 @@
           primaryColor="rgba(0,206,203,0.7)"
           secondaryColor="#F1F1F1"
           height=400
-          width=700 />
+          width=700
+          @removeClicked="handleRemove" />
 
       </div>
     </div>
@@ -134,6 +135,16 @@ export default {
               timeSeriesData: data,
               datetimeFormat: '%Y'
           }
+      },
+      /**
+       * An example of a handler for the remove button click event.
+       *
+       */
+      handleRemove: function (graphTitle) {
+          this.projectData = this.projectData.filter((d) => {
+              return d.graphTitle != graphTitle
+          })
+          this.$set(this, 'projectData', this.projectData);
       },
       /**
        * Randomize the data in the dashboard.

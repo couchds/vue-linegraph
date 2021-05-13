@@ -12,6 +12,7 @@
                 <h1>{{ graphTitle }}</h1>
             </div>
             <div class="graph-header-item">
+                <div :id="'delete-btn-'+graphTitleId" class="remove-btn" @click="handleRemoveClicked">Remove</div>
             </div>
         </div>
         <div class="graph-section">
@@ -448,6 +449,7 @@ export default {
                 .attr("y2", this.adjustedHeight)
                 .attr("stroke", "black");
         },
+
         updateChart: function (event) {
             let self = this;
             this.chartVisuals.attr("transform", event.transform);
@@ -763,6 +765,9 @@ export default {
         handleCustomizeClicked: function () {
             this.customizeActive = !this.customizeActive;
         },
+        handleRemoveClicked: function () {
+            this.$emit('removeClicked', this.graphTitle);
+        },
         /**
          * For a given time series, set if it is active or not; i.e. if
          * it is shown to the user or not.
@@ -890,6 +895,15 @@ export default {
 
 .customize-btn {
     background-color: #4682B4;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+    padding: 4px;
+}
+
+.remove-btn {
+    background-color: #FF0000;
     border-radius: 8px;
     cursor: pointer;
     color: white;
