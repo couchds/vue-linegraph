@@ -8,7 +8,7 @@
     <div id="btn-examples">
       <h1>Actions</h1>
       <button class="demo-btn" @click="randomizeData">Randomize Data</button><br />
-      <label># of visuals:</label><input type="text" v-model="numVisualsInput" @change="updateNumVisuals" />
+      <label># of visuals:</label><input type="text" v-model="numVisualsInput"  @change="updateNumVisuals" />
     </div>
 
     <div class="flex-row">
@@ -19,8 +19,8 @@
           primaryColor="rgba(0,206,203,0.7)"
           secondaryColor="#F1F1F1"
           height=400
-          width=700 />
-
+          width=700
+          @removeClicked="handleRemove" />
       </div>
     </div>
   </div>
@@ -136,6 +136,16 @@ export default {
           }
       },
       /**
+       * An example of a handler for the remove button click event.
+       *
+       */
+      handleRemove: function (graphTitle) {
+          this.projectData = this.projectData.filter((d) => {
+              return d.graphTitle != graphTitle
+          })
+          this.$set(this, 'projectData', this.projectData);
+      },
+      /**
        * Randomize the data in the dashboard.
        * See:
        * https://vuejs.org/2016/02/06/common-gotchas/#Why-isn%E2%80%99t-the-DOM-updating
@@ -245,6 +255,18 @@ html, body {
 
 .line-graph:hover {
   stroke-width: 6px
+}
+
+.list-item {
+  display: inline-block;
+  margin-right: 10px;
+}
+.list-enter-active, .list-leave-active {
+  transition: all 1s;
+}
+.list-enter, .list-leave-to /* .list-leave-active below version 2.1.8 */ {
+  opacity: 0;
+  transform: translateY(30px);
 }
 
 </style>
