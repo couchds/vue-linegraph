@@ -842,15 +842,6 @@ export default {
 }
 
 
-.line-graph-btns > button  {
-  background-color: steelblue;
-  border: 2px solid;
-  border-radius: 10px;
-  color: white;
-  cursor: pointer;
-  font-size: 1.2em;
-}
-
 .tooltip {
     background-color: #333;
     color: white;
@@ -903,7 +894,7 @@ export default {
 }
 
 .remove-btn {
-    background-color: #FF0000;
+    background-color: #bc0000;
     border-radius: 8px;
     cursor: pointer;
     color: white;
