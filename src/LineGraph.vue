@@ -11,7 +11,9 @@
             <div class="graph-header-item">
                 <h1>{{ graphTitle }}</h1>
             </div>
-            <div class="graph-header-item"></div>
+            <div class="graph-header-item">
+                <div :id="'delete-btn-'+graphTitleId" class="remove-btn" @click="handleRemoveClicked">Remove</div>
+            </div>
         </div>
         <div class="graph-section">
             <div class="graph-section-1">
@@ -447,6 +449,7 @@ export default {
                 .attr("y2", this.adjustedHeight)
                 .attr("stroke", "black");
         },
+
         updateChart: function (event) {
             let self = this;
             this.chartVisuals.attr("transform", event.transform);
@@ -727,7 +730,6 @@ export default {
             let criticalValues = series.measurements.filter((d) => {
                     return (d.value <= series.criticalValues[0]) || (d.value >= series.criticalValues[1]);
             });
-            console.log(criticalValues);
             var parse = d3.timeParse(this.datetimeFormat);
             this.criticalValues = this.chartVisuals.selectAll("foo")
                 .data(criticalValues)
@@ -762,6 +764,9 @@ export default {
         },
         handleCustomizeClicked: function () {
             this.customizeActive = !this.customizeActive;
+        },
+        handleRemoveClicked: function () {
+            this.$emit('removeClicked', this.graphTitle);
         },
         /**
          * For a given time series, set if it is active or not; i.e. if
@@ -837,15 +842,6 @@ export default {
 }
 
 
-.line-graph-btns > button  {
-  background-color: steelblue;
-  border: 2px solid;
-  border-radius: 10px;
-  color: white;
-  cursor: pointer;
-  font-size: 1.2em;
-}
-
 .tooltip {
     background-color: #333;
     color: white;
@@ -890,6 +886,15 @@ export default {
 
 .customize-btn {
     background-color: #4682B4;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+    padding: 4px;
+}
+
+.remove-btn {
+    background-color: #bc0000;
     border-radius: 8px;
     cursor: pointer;
     color: white;

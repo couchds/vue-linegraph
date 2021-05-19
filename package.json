@@ -1,7 +1,8 @@
 {
   "name": "vlgraph",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A line graph component for Vue.js",
+  "main": "./dist/v-linegraph.js",
   "private": false,
   "scripts": {
     "build": "webpack --config config/webpack.config.js"

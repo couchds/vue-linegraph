@@ -3,7 +3,8 @@
         <h3>Graph Settings</h3>
         <div v-for="ts in timeSeriesData" :key="ts.name">
             <h4>{{ ts.name }}</h4>
-            <input type="checkbox" :id="'checkbox-'+htmlCompatible(ts.name)" v-model="ts.active" />
+            <label>Show?</label><input type="checkbox" :id="'checkbox-'+htmlCompatible(ts.name)" v-model="ts.active" /><br />
+            <label>Y-Axis:</label>
             <select :id="'select-'+htmlCompatible(ts.name)" v-model="ts.yAxis">
                 <option :value="0">0</option>
                 <option :value="1">1</option>
