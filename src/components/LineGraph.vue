@@ -60,44 +60,43 @@ export default {
                     animateDraw: true,
                     animateDrawDuration: 1000,
                     color: 'steelblue',
-                    criticalValues: [120, 350],
                     isBar: false,
                     name: 'Test Data',
                     referenceRange: [150, 300],
                     yAxis: 0,
                     measurements: [
                         {
-                            datetime: '2015-01-02',
-                            value: 50
+                            datetime: '2015-01-01',
+                            value: 0.6
                         },
                         {
-                            datetime: '2015-02-02',
-                            value: 150
+                            datetime: '2015-02-01',
+                            value: 1.2
                         },
                         {
-                            datetime: '2015-03-02',
-                            value: 200
+                            datetime: '2015-03-01',
+                            value: 0.5
                         },
                         {
-                            datetime: '2015-04-02',
-                            value: -30
+                            datetime: '2015-04-01',
+                            value: 1.3
                         },
                         {
-                            datetime: '2015-05-02',
-                            value: 240
+                            datetime: '2015-05-01',
+                            value: 1.2
                         },
                         {
-                            datetime: '2015-06-02',
-                            value: 380
+                            datetime: '2015-06-01',
+                            value: 0.4
                         },
                         {
-                            datetime: '2015-07-02',
-                            value: 420
+                            datetime: '2015-07-01',
+                            value: 0.6
                         }
-                    ]
+                    ]               
                 },
                 {
-                    active: true,
+                    active: false,
                     animateDraw: false,
                     animateDrawDuration: null,
                     color: 'red',
@@ -205,6 +204,8 @@ export default {
         datetimeFormat: {
             type: String,
             default: '%Y-%m-%d'
+            //default: "%Y-%m-%dT%H:%M:%SZ"
+            //2021-04-30T09:04:46Z
         },
         /**
          * Graph title, which should be unique among a set of graphs.
@@ -257,7 +258,7 @@ export default {
         },
         strokeWidth: {
             type: Number,
-            default: 1.5
+            default: 0.1
         }
     },
     computed: {
@@ -568,7 +569,18 @@ export default {
             }[axis];
             let yScale = this.getYScale(axis);
             if (axis === 0) {
-                this.y0Axis = d3.axisLeft(yScale).tickFormat(d3.format("~s"));
+                //this.y0Axis = d3.axisLeft(yScale).tickFormat(d3.format("~s"));
+                //this.y0Axis = d3.axisLeft(yScale).tickFormat(function () { return d3.format("~s")});
+                this.y0Axis = d3.axisLeft(yScale).tickFormat(function (d) {
+                    if (d > 1) {
+                        console.log("HERE");
+                        return d3.format("~s")(d);
+                    }
+                    else {
+                        return d3.format("~r")(d);
+                    }
+                    //return (d > 1) ? d3.format("~s") : d3.format("~r")
+                });
                 this.y0AxisGroup = this.chart
                     .append("g")
                     .attr("class", "y-axis axis")
@@ -580,7 +592,10 @@ export default {
                     .call(this.y0Axis);
             }
             if (axis === 1) {
-                this.y1Axis = d3.axisRight(yScale).tickFormat(d3.format("~s"));
+                //this.y1Axis = d3.axisRight(yScale).tickFormat(d3.format("~s"));
+                this.y1Axis = d3.axisRight(yScale).tickFormat(function (d) {
+                    return (d > 1) ? d3.format("~s") : d3.format("~r")
+                });
                 this.y1AxisGroup = this.chart
                     .append("g")
                     .attr("class", "y-axis axis")
@@ -643,8 +658,9 @@ export default {
             // Get min of min of each time series, and same for max.
             min = d3.min(searchArg, function (d) { return d3.min(d, function (d) { return parse(d.datetime) }); });
             max = d3.max(searchArg, function (d) { return d3.max(d, function (d) { return parse(d.datetime) }); });
-
-            if (this.timeSeriesHasBarGraph(Y0TimeSeries) || this.timeSeriesHasBarGraph(Y1TimeSeries)) {
+            console.log(min);
+            console.log(max);
+            if (this.timeSeriesHasBarGraph(Y0TimeSeries)) { // || this.timeSeriesHasBarGraph(Y1TimeSeries)) {
                 max.setHours(max.getHours() + (24*15)); // TODO: get the specific time to extend this by.
             }
             this.xScale = d3.scaleTime()
