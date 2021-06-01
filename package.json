@@ -1,6 +1,6 @@
 {
   "name": "vlgraph",
-  "version": "1.0.5",
+  "version": "0.1.5",
   "description": "A line graph component for Vue.js",
   "main": "./dist/v-linegraph.js",
   "private": false,
